@@ -11,7 +11,7 @@ const cloud = require('./cloud');
 
 const PORT = Number(process.env.PORT || 3000);
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 const MOCK_AI = process.env.MOCK_AI === '1' || !GEMINI_API_KEY;
 const DAILY_AI_CALL_LIMIT = Number(process.env.DAILY_AI_CALL_LIMIT || 3000); // 1日のGemini呼び出し上限(全体)
@@ -145,7 +145,7 @@ async function callGemini({ system, parts, schema, temperature = 0.7 }) {
   };
   let lastErr;
   for (let attempt = 0; attempt < 3; attempt++) {
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY }, body: JSON.stringify(body) }).catch((e) => ({ ok: false, status: 0, json: async () => ({ error: { message: e.message } }) }));
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY }, body: JSON.stringify(body), signal: AbortSignal.timeout(90000) }).catch((e) => ({ ok: false, status: 0, json: async () => ({ error: { message: e.message } }) }));
     const j = await r.json().catch(() => ({}));
     if (!r.ok) {
       lastErr = new Error(`Gemini API エラー ${r.status}: ${j.error?.message || ''}`);
