@@ -157,7 +157,7 @@ function render() {
 
 // ---------- 設定 ----------
 function renderSettings(el, s, isNew) {
-  let questions = (s.questions || []).map((q) => ({ ...q, quickReplies: Array.isArray(q.quickReplies) ? q.quickReplies.join(' / ') : q.quickReplies || '' }));
+  let questions = []; // 質問はAIが資料と目的から考える(質問リストは使わない)
   let mats = (s.materials || []).map((m) => ({ ...m }));
   el.innerHTML = `
   ${isNew ? '' : `<div class="card"><div class="row"><input id="hint" placeholder="AIへの要望(任意)" style="flex:1"><button class="btn primary" id="gen">✨ 資料からAIで作成</button></div><div class="small" id="genmsg"></div></div>`}
@@ -177,7 +177,7 @@ function renderSettings(el, s, isNew) {
       <label class="check"><input type="checkbox" id="active" ${s.active !== false ? 'checked' : ''}>受付中</label></div>
     </details>
   </div>
-  <div class="card"><h3>質問</h3>
+  <div class="card" hidden><h3>質問</h3>
     <div id="qs"></div><button class="btn small" id="addq" style="margin-top:10px">＋ 追加</button>
   </div>
   <div class="card"><h3>資料</h3>
@@ -250,12 +250,11 @@ function renderSettings(el, s, isNew) {
 
   if (!isNew) $('#gen', el).onclick = async () => {
     if (!mats.length && !confirm('保存済みの資料がありません。調査名だけから作りますか?')) return;
-    if (questions.some((q) => q.text.trim()) && !confirm('今の質問リストをAIの案で置き換えます。よろしいですか?')) return;
     $('#gen', el).disabled = true; $('#genmsg', el).textContent = '作成中…';
     try {
       const g = await api(`/api/admin/studies/${s.id}/generate`, { method: 'POST', body: JSON.stringify({ hint: $('#hint', el).value }) });
       const cur = collect();
-      draft = { ...s, ...cur, materials: mats, objectives: g.objectives, topics: g.topics, publicTitle: g.publicTitle, intro: g.intro, maxQuestions: Math.max(cur.maxQuestions, g.questions.length + 4), questions: g.questions };
+      draft = { ...s, ...cur, materials: mats, objectives: g.objectives, topics: g.topics, publicTitle: g.publicTitle, intro: g.intro, questions: [] };
       el.innerHTML = ''; renderSettings(el, draft, false);
       $('#genmsg', el).textContent = '✓ 未保存';
     } catch (e) { $('#genmsg', el).textContent = e.message; $('#gen', el).disabled = false; }

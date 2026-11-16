@@ -199,7 +199,7 @@ const TECHNIQUES = `# インタビュー技法(必ず守る)
 function interviewerSystem(study, session) {
   const asked = session.messages.filter((m) => m.role === 'ai').length;
   const max = Number(study.maxQuestions) || 10;
-  const qs = (study.questions || []).filter((q) => q.text);
+  const qs = []; // 質問リストは使わず、AIが目的と資料から質問を考える
   const covered = new Set(session.messages.map((m) => m.questionId).filter(Boolean));
   const qList = qs.length ? qs.map((q, i) => `${i + 1}. [id=${q.id}]${covered.has(q.id) ? ' (済)' : ''} ${q.text}` + (q.followUp ? `\n   深掘りの指示: ${q.followUp}` : '') + (q.quickReplies?.length ? `\n   選択肢(回答者の言語に訳して quick_replies に入れる): ${q.quickReplies.join(' / ')}` : '')).join('\n') : '(質問リストなし。調査目的と資料から自分で質問を組み立てる)';
   return `あなたは、日本の伝統文化に対する海外の人々の反応を調べる定性市場調査の、プロのインタビュアーです。
@@ -245,7 +245,7 @@ function mockTurn(study, session) {
   const last = [...session.messages].reverse().find((m) => m.role === 'user');
   const done = n >= Math.min(Number(study.maxQuestions) || 10, 3);
   const shown = (study.materials || []).find((m) => m.showToRespondent);
-  const q = (study.questions || [])[n];
+  const q = null;
   return {
     answer_ja: last ? `(デモ訳) ${last.text}` : '',
     message: done ? 'Thank you very much for your time! (demo mode)' : n === 0 ? `Hello! This is a short interview about "${study.publicTitle || study.title}". ${q ? q.text : 'What comes to mind when you think of traditional Japanese culture?'} (demo mode — set GEMINI_API_KEY)` : `I see — "${(last?.text || '').slice(0, 40)}". ${q ? q.text : 'What made you feel that way?'} (demo)`,
@@ -368,7 +368,6 @@ function computeStats(study) {
   const ratings = all.map((s) => s.rating?.score).filter(Boolean);
   const avg = (a) => (a.length ? Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10 : null);
   const qCover = {};
-  for (const q of study.questions || []) qCover[q.id] = { text: q.text, reached: 0 };
   for (const s of all) for (const id of new Set(s.messages.map((m) => m.questionId).filter(Boolean))) if (qCover[id]) qCover[id].reached++;
   return {
     total: all.length, completed: completed.length, completionRate: all.length ? Math.round((completed.length / all.length) * 100) : 0,
