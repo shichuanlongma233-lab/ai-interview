@@ -19,6 +19,6 @@ services:
       - key: SUPABASE_SECRET_KEY
         sync: false          # Supabase の secret key(または service_role key)
       - key: GEMINI_MODEL
-        value: gemini-2.5-flash
+        value: gemini-3.8-flash
       - key: DAILY_AI_CALL_LIMIT
         value: "1000"

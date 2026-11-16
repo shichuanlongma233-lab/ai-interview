@@ -11,7 +11,7 @@ const cloud = require('./cloud');
 
 const PORT = Number(process.env.PORT || 3000);
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
 const MOCK_AI = process.env.MOCK_AI === '1' || !GEMINI_API_KEY;
 const DAILY_AI_CALL_LIMIT = Number(process.env.DAILY_AI_CALL_LIMIT || 3000); // 1日のGemini呼び出し上限(全体)
