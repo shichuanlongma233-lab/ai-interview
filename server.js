@@ -135,27 +135,35 @@ function materialParts(study) {
   return parts;
 }
 
+const FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODELS || 'gemini-3.5-flash').split(',').map((m) => m.trim()).filter(Boolean);
 async function callGemini({ system, parts, schema, temperature = 0.7 }) {
   countAiCall();
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`;
-  const body = {
+  const body = JSON.stringify({
     systemInstruction: { parts: [{ text: system }] },
     contents: [{ role: 'user', parts }],
     generationConfig: { temperature, ...(schema ? { responseMimeType: 'application/json', responseSchema: schema } : {}) },
-  };
+  });
+  // 設定したモデルが使えない・応答しない場合は、予備のモデルに切り替える
+  const models = [...new Set([GEMINI_MODEL, ...FALLBACK_MODELS])];
   let lastErr;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY }, body: JSON.stringify(body), signal: AbortSignal.timeout(90000) }).catch((e) => ({ ok: false, status: 0, json: async () => ({ error: { message: e.message } }) }));
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      lastErr = new Error(`Gemini API エラー ${r.status}: ${j.error?.message || ''}`);
-      if (r.status === 0 || r.status === 429 || r.status >= 500) { await new Promise((ok) => setTimeout(ok, 1500 * (attempt + 1))); continue; }
-      throw lastErr;
+  for (const model of models) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': GEMINI_API_KEY }, body, signal: AbortSignal.timeout(45000) })
+        .catch((e) => ({ ok: false, status: 0, json: async () => ({ error: { message: e.name === 'TimeoutError' ? '45秒以内に応答がありませんでした' : e.message } }) }));
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        lastErr = new Error(`Gemini API エラー ${r.status} (${model}): ${j.error?.message || ''}`);
+        console.error(lastErr.message);
+        if (r.status === 429 || r.status >= 500) { await new Promise((ok) => setTimeout(ok, 1500 * (attempt + 1))); continue; }
+        if (r.status === 0 || r.status === 404) break; // 応答なし・モデルなし → 次のモデルへ
+        throw lastErr; // キーの誤りなど
+      }
+      const text = (j.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
+      if (!text) { lastErr = new Error('Gemini から空の応答が返りました'); continue; }
+      if (!schema) return text;
+      try { return JSON.parse(text); } catch { lastErr = new Error('Gemini の応答を読み取れませんでした'); }
     }
-    const text = (j.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
-    if (!text) { lastErr = new Error('Gemini から空の応答が返りました'); continue; }
-    if (!schema) return text;
-    try { return JSON.parse(text); } catch { lastErr = new Error('Gemini の応答を読み取れませんでした'); }
   }
   throw lastErr;
 }
