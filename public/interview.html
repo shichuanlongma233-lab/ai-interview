@@ -4,60 +4,126 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Interview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&display=swap">
 <link rel="stylesheet" href="/static/style.css">
 <style>
-  body { background: var(--paper); }
-  .wrap { max-width: 720px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
-  header.top { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; background: var(--card); position: sticky; top: 0; z-index: 2; }
-  header.top h1 { font-size: 16px; margin: 0; flex: 1; }
-  .progress { font-size: 12px; color: var(--muted); }
-  .intro { padding: 28px 20px; }
-  .intro h2 { font-size: 22px; margin: 0 0 8px; }
-  .intro p { color: var(--muted); line-height: 1.7; white-space: pre-wrap; }
-  .field { margin: 16px 0; }
-  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  :root {
+    --beni: #d9506a;      /* 紅 */
+    --beni-d: #b93a55;
+    --sakura: #fbe4e6;    /* 桜色 */
+    --washi: #fbf7f0;     /* 和紙 */
+    --ai-ink: #2b3a67;    /* 藍 */
+    --kin: #c9a24a;       /* 金 */
+    --sumi: #2a2a2e;
+    --soft: #8a8590;
+    --round: "Zen Maru Gothic", system-ui, -apple-system, "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
+  }
+  body { background: linear-gradient(180deg, var(--sakura) 0%, #fdf1ef 260px, var(--washi) 520px); color: var(--sumi); font-family: var(--round); }
+  .wrap { max-width: 560px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; position: relative; }
+  /* 青海波の模様 */
+  .seigaiha { position: absolute; inset: 0 0 auto 0; height: 300px; pointer-events: none; opacity: .35;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='20' viewBox='0 0 40 20'%3E%3Cg fill='none' stroke='%23f2b8c0' stroke-width='1'%3E%3Ccircle cx='20' cy='20' r='18'/%3E%3Ccircle cx='20' cy='20' r='13'/%3E%3Ccircle cx='20' cy='20' r='8'/%3E%3Ccircle cx='0' cy='10' r='18'/%3E%3Ccircle cx='0' cy='10' r='13'/%3E%3Ccircle cx='0' cy='10' r='8'/%3E%3Ccircle cx='40' cy='10' r='18'/%3E%3Ccircle cx='40' cy='10' r='13'/%3E%3Ccircle cx='40' cy='10' r='8'/%3E%3C/g%3E%3C/svg%3E");
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, transparent 100%); mask-image: linear-gradient(180deg, #000 0%, transparent 100%); }
+  .card { background: #fff; border-radius: 24px; box-shadow: 0 6px 24px rgba(185, 58, 85, .08); }
+  /* ---- 開始画面 ---- */
+  .intro { position: relative; padding: 18px 18px 32px; }
+  .brand { display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; color: var(--beni); font-size: 15px; letter-spacing: .08em; padding: 6px 0 4px; }
+  .hero { position: relative; display: flex; align-items: center; gap: 4px; padding: 10px 0 6px; min-height: 190px; }
+  .hero .mascot { width: 150px; flex: none; }
+  .bubble { position: relative; background: #fff; border-radius: 22px; padding: 14px 16px; font-size: 16px; line-height: 1.55; font-weight: 700; box-shadow: 0 6px 20px rgba(185, 58, 85, .10); }
+  .bubble::before { content: ""; position: absolute; left: -9px; bottom: 22px; border: 10px solid transparent; border-right-color: #fff; border-left: 0; }
+  .kasumi { position: absolute; border-radius: 999px; background: #fff; opacity: .8; filter: blur(.3px); }
+  h2.title { font-size: 26px; text-align: center; margin: 6px 0 4px; line-height: 1.35; }
+  .lead { text-align: center; color: var(--soft); line-height: 1.7; white-space: pre-wrap; font-size: 14px; margin: 0 6px 16px; }
+  .sect { padding: 18px; margin-bottom: 14px; }
+  .sect h3 { font-size: 14px; margin: 0 0 12px; color: var(--sumi); }
   .langs { display: flex; flex-wrap: wrap; gap: 8px; }
-  .langs button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
-  .langs button.on { background: var(--ai); color: #fff; border-color: var(--ai); }
-  .chat { flex: 1; padding: 18px 14px 8px; display: flex; flex-direction: column; gap: 12px; }
-  .msg { max-width: 85%; padding: 12px 14px; border-radius: 16px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; font-size: 15px; }
-  .msg.ai { align-self: flex-start; background: var(--card); border: 1px solid var(--line); border-top-left-radius: 4px; }
-  .msg.user { align-self: flex-end; background: var(--ai); color: #fff; border-top-right-radius: 4px; }
-  .material { align-self: flex-start; max-width: 85%; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--card); }
-  .material img { display: block; max-width: 100%; max-height: 360px; }
-  .material a { display: block; padding: 10px 14px; font-size: 14px; }
-  .typing { align-self: flex-start; color: var(--muted); font-size: 13px; padding: 4px 8px; }
-  .typing span { animation: blink 1.2s infinite; }
-  .typing span:nth-child(2) { animation-delay: .2s } .typing span:nth-child(3) { animation-delay: .4s }
-  @keyframes blink { 0%,80%,100% { opacity: .2 } 40% { opacity: 1 } }
-  .composer { position: sticky; bottom: 0; background: var(--card); border-top: 1px solid var(--line); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
-  .row { display: flex; gap: 8px; align-items: flex-end; }
-  .row textarea { flex: 1; resize: none; min-height: 44px; max-height: 160px; }
-  .sub { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--muted); }
-  .sub button { background: none; border: none; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 12px; }
-  .quick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-  .quick button { border: 1px solid var(--ai); color: var(--ai); background: #fff; border-radius: 999px; padding: 7px 12px; font-size: 14px; cursor: pointer; }
-  .quick button:hover { background: #eef1f8; }
-  .rating { text-align: center; padding: 8px 20px 28px; }
-  .stars { display: flex; justify-content: center; gap: 6px; margin: 10px 0; }
-  .stars button { font-size: 30px; background: none; border: 0; cursor: pointer; color: #ccc; padding: 0 2px; }
-  .stars button.on { color: #e0a800; }
-  .done { text-align: center; padding: 28px 20px; color: var(--muted); }
+  .langs button { border: 0; background: var(--washi); border-radius: 999px; padding: 9px 15px; font: inherit; font-size: 14px; cursor: pointer; color: var(--sumi); }
+  .langs button.on { background: var(--beni); color: #fff; box-shadow: 0 4px 12px rgba(217, 80, 106, .35); }
+  .field { margin: 0 0 12px; }
+  .field label { display: block; font-size: 12px; color: var(--soft); margin-bottom: 5px; }
+  .field input, .field select, textarea { border: 0; background: var(--washi); border-radius: 14px; font-family: var(--round); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .consent { font-size: 12px; color: var(--soft); text-align: center; line-height: 1.6; margin: 4px 10px 14px; }
+  .go { width: 100%; border: 0; border-radius: 999px; padding: 17px; font: inherit; font-size: 17px; font-weight: 700; color: #fff; background: var(--beni); box-shadow: 0 8px 20px rgba(217, 80, 106, .35); cursor: pointer; }
+  .go:disabled { opacity: .6; }
+  /* ---- インタビュー画面 ---- */
+  header.top { position: sticky; top: 0; z-index: 3; padding: 12px 16px 10px; background: rgba(251, 228, 230, .92); backdrop-filter: blur(8px); }
+  header.top .row1 { display: flex; align-items: center; gap: 10px; }
+  header.top .av { width: 36px; height: 36px; flex: none; }
+  header.top h1 { font-size: 15px; margin: 0; flex: 1; line-height: 1.3; }
+  header.top .count { font-size: 12px; color: var(--beni); font-weight: 700; white-space: nowrap; }
+  .dots { display: flex; gap: 6px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+  .dot { flex: none; box-sizing: border-box; width: 22px; height: 22px; aspect-ratio: 1; border-radius: 50%; border: 2px dotted #e79aa8; display: grid; place-items: center; font-size: 10px; color: #e79aa8; }
+  .dot.past { border: 0; background: #f5bcc5; color: #fff; }
+  .dot.now { border: 0; background: var(--beni); color: #fff; transform: scale(1.18); box-shadow: 0 0 0 4px #fff; }
+  .chat { flex: 1; padding: 16px 14px 10px; display: flex; flex-direction: column; gap: 14px; }
+  .ai-row { display: flex; gap: 8px; align-items: flex-end; align-self: flex-start; max-width: 92%; }
+  .ai-row .av { width: 40px; height: 40px; flex: none; }
+  .msg { padding: 13px 16px; border-radius: 22px; line-height: 1.65; white-space: pre-wrap; word-wrap: break-word; font-size: 15.5px; }
+  .msg.ai { background: #fff; border-bottom-left-radius: 6px; box-shadow: 0 4px 16px rgba(185, 58, 85, .08); }
+  .msg.user { align-self: flex-end; max-width: 82%; background: var(--ai-ink); color: #fff; border-bottom-right-radius: 6px; }
+  .material { margin-left: 48px; align-self: flex-start; max-width: 80%; border-radius: 20px; overflow: hidden; background: #fff; box-shadow: 0 4px 16px rgba(185, 58, 85, .08); }
+  .material img { display: block; max-width: 100%; max-height: 340px; }
+  .material a { display: block; padding: 10px 14px; font-size: 14px; color: var(--ai-ink); }
+  .typing { display: flex; gap: 5px; padding: 16px 18px; }
+  .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--beni); animation: hop 1.1s infinite; }
+  .typing i:nth-child(2) { animation-delay: .15s } .typing i:nth-child(3) { animation-delay: .3s }
+  @keyframes hop { 0%,70%,100% { transform: translateY(0); opacity: .4 } 35% { transform: translateY(-5px); opacity: 1 } }
+  .composer { position: sticky; bottom: 0; z-index: 3; padding: 10px 12px calc(12px + env(safe-area-inset-bottom)); background: linear-gradient(180deg, rgba(251,247,240,0) 0%, var(--washi) 22%); }
+  .quick { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; justify-content: center; }
+  .quick button { border: 0; background: #fff; color: var(--beni-d); border-radius: 999px; padding: 10px 16px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 14px rgba(185, 58, 85, .12); }
+  .quick button:active { background: var(--sakura); }
+  .inbar { display: flex; gap: 8px; align-items: flex-end; background: #fff; border-radius: 28px; padding: 6px 6px 6px 16px; box-shadow: 0 6px 22px rgba(185, 58, 85, .12); }
+  .inbar textarea { flex: 1; resize: none; min-height: 40px; max-height: 150px; background: transparent; padding: 9px 0; outline: none !important; font-size: 15.5px; }
+  .send { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--beni); color: #fff; cursor: pointer; flex: none; display: grid; place-items: center; box-shadow: 0 4px 12px rgba(217, 80, 106, .35); }
+  .send:disabled { opacity: .5; }
+  .endlink { display: block; margin: 8px auto 0; background: none; border: 0; color: var(--soft); font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; }
+  .done { text-align: center; padding: 18px 20px 6px; }
+  .done .mascot { width: 130px; display: block; margin: 0 auto 6px; }
+  .done p { font-weight: 700; line-height: 1.7; margin: 0; }
+  .rating { margin: 14px; padding: 18px; text-align: center; }
+  .stars { display: flex; justify-content: center; gap: 4px; margin: 10px 0 12px; }
+  .stars button { width: 46px; height: 46px; background: none; border: 0; cursor: pointer; padding: 0; }
+  .stars svg { width: 38px; height: 38px; fill: #eadfe1; transition: transform .15s; }
+  .stars button.on svg { fill: var(--beni); transform: scale(1.08); }
+  .rating textarea { width: 100%; padding: 10px 12px; margin-bottom: 12px; }
+  .notice { text-align: center; padding: 60px 24px; font-weight: 700; color: var(--soft); }
+  .small { font-size: 12px; color: var(--soft); }
 </style>
 </head>
 <body>
-<div class="wrap" id="app"><div class="intro">Loading…</div></div>
+<div class="wrap" id="app"><div class="notice">…</div></div>
 <script>
 const UI = {
-  en: { start: 'Start interview', lang: 'Language', country: 'Country / region you live in', age: 'Age', gender: 'Gender', visited: 'Have you been to Japan?', optional: '(optional)', consent: 'Your answers are anonymous and used only for research. Please do not enter your name or contact details.', ph: 'Type your answer…', send: 'Send', end: 'End interview', confirmEnd: 'End the interview now?', thanks: 'Thank you! Your interview is complete. You can close this page.', closed: 'This interview is currently closed.', err: 'Something went wrong. Please try again.', q: 'Question', yes: 'Yes', no: 'No', many: 'Several times', sel: 'Select', male: 'Male', female: 'Female', other: 'Other / prefer not to say', notfound: 'Interview not found.', rateQ: 'How was this interview?', rateC: 'Any comments? (optional)', rateSend: 'Send', rateThanks: 'Thank you for your feedback!' },
-  ja: { start: 'インタビューを始める', lang: '言語', country: 'お住まいの国・地域', age: '年齢', gender: '性別', visited: '日本に行ったことはありますか?', optional: '(任意)', consent: '回答は匿名で、調査目的にのみ使用します。お名前や連絡先は入力しないでください。', ph: '回答を入力…', send: '送信', end: 'インタビューを終える', confirmEnd: 'インタビューを終了しますか?', thanks: 'ありがとうございました。インタビューは終了です。このページを閉じてください。', closed: 'このインタビューは現在受付を終了しています。', err: 'エラーが発生しました。もう一度お試しください。', q: '質問', yes: 'はい', no: 'いいえ', many: '何度もある', sel: '選択', male: '男性', female: '女性', other: 'その他・回答しない', notfound: 'インタビューが見つかりません。', rateQ: 'このインタビューはいかがでしたか?', rateC: 'ご意見があれば(任意)', rateSend: '送信', rateThanks: 'ご意見ありがとうございました!' },
-  'zh-CN': { start: '开始访谈', lang: '语言', country: '居住国家/地区', age: '年龄', gender: '性别', visited: '您去过日本吗?', optional: '(可选)', consent: '您的回答是匿名的,仅用于研究。请勿输入姓名或联系方式。', ph: '请输入您的回答…', send: '发送', end: '结束访谈', confirmEnd: '现在结束访谈吗?', thanks: '谢谢!访谈已完成,您可以关闭此页面。', closed: '此访谈目前已关闭。', err: '出现错误,请重试。', q: '问题', yes: '是', no: '否', many: '去过多次', sel: '请选择', male: '男', female: '女', other: '其他/不愿透露', notfound: '找不到访谈。', rateQ: '您对这次访谈满意吗?', rateC: '其他意见(可选)', rateSend: '提交', rateThanks: '感谢您的反馈!' },
-  'zh-TW': { start: '開始訪談', lang: '語言', country: '居住國家/地區', age: '年齡', gender: '性別', visited: '您去過日本嗎?', optional: '(選填)', consent: '您的回答為匿名,僅用於研究。請勿輸入姓名或聯絡方式。', ph: '請輸入您的回答…', send: '送出', end: '結束訪談', confirmEnd: '現在結束訪談嗎?', thanks: '謝謝!訪談已完成,您可以關閉此頁面。', closed: '此訪談目前已關閉。', err: '發生錯誤,請再試一次。', q: '問題', yes: '是', no: '否', many: '去過多次', sel: '請選擇', male: '男', female: '女', other: '其他/不願透露', notfound: '找不到訪談。', rateQ: '您對這次訪談滿意嗎?', rateC: '其他意見(選填)', rateSend: '送出', rateThanks: '感謝您的回饋!' },
-  ko: { start: '인터뷰 시작', lang: '언어', country: '거주 국가/지역', age: '나이', gender: '성별', visited: '일본에 가 본 적이 있나요?', optional: '(선택)', consent: '답변은 익명으로 연구 목적으로만 사용됩니다. 이름이나 연락처는 입력하지 마세요.', ph: '답변을 입력하세요…', send: '보내기', end: '인터뷰 종료', confirmEnd: '지금 인터뷰를 종료할까요?', thanks: '감사합니다! 인터뷰가 끝났습니다. 이 페이지를 닫으셔도 됩니다.', closed: '이 인터뷰는 현재 마감되었습니다.', err: '오류가 발생했습니다. 다시 시도해 주세요.', q: '질문', yes: '예', no: '아니요', many: '여러 번', sel: '선택', male: '남성', female: '여성', other: '기타/응답 안 함', notfound: '인터뷰를 찾을 수 없습니다.', rateQ: '이번 인터뷰는 어떠셨나요?', rateC: '의견이 있으면 적어 주세요(선택)', rateSend: '보내기', rateThanks: '의견 감사합니다!' },
-  es: { start: 'Comenzar la entrevista', lang: 'Idioma', country: 'País / región donde vive', age: 'Edad', gender: 'Género', visited: '¿Ha estado en Japón?', optional: '(opcional)', consent: 'Sus respuestas son anónimas y solo se usan para investigación. No escriba su nombre ni datos de contacto.', ph: 'Escriba su respuesta…', send: 'Enviar', end: 'Terminar entrevista', confirmEnd: '¿Terminar la entrevista ahora?', thanks: '¡Gracias! La entrevista ha terminado. Puede cerrar esta página.', closed: 'Esta entrevista está cerrada.', err: 'Algo salió mal. Inténtelo de nuevo.', q: 'Pregunta', yes: 'Sí', no: 'No', many: 'Varias veces', sel: 'Seleccionar', male: 'Hombre', female: 'Mujer', other: 'Otro / prefiero no decirlo', notfound: 'Entrevista no encontrada.', rateQ: '¿Qué le pareció esta entrevista?', rateC: '¿Algún comentario? (opcional)', rateSend: 'Enviar', rateThanks: '¡Gracias por su opinión!' },
-  fr: { start: "Commencer l'entretien", lang: 'Langue', country: 'Pays / région de résidence', age: 'Âge', gender: 'Genre', visited: 'Êtes-vous déjà allé(e) au Japon ?', optional: '(facultatif)', consent: 'Vos réponses sont anonymes et utilisées uniquement à des fins de recherche. N’indiquez pas votre nom ni vos coordonnées.', ph: 'Écrivez votre réponse…', send: 'Envoyer', end: "Terminer l'entretien", confirmEnd: "Terminer l'entretien maintenant ?", thanks: "Merci ! L'entretien est terminé. Vous pouvez fermer cette page.", closed: 'Cet entretien est fermé.', err: 'Une erreur est survenue. Veuillez réessayer.', q: 'Question', yes: 'Oui', no: 'Non', many: 'Plusieurs fois', sel: 'Choisir', male: 'Homme', female: 'Femme', other: 'Autre / ne souhaite pas répondre', notfound: 'Entretien introuvable.', rateQ: 'Comment avez-vous trouvé cet entretien ?', rateC: 'Un commentaire ? (facultatif)', rateSend: 'Envoyer', rateThanks: 'Merci pour votre avis !' },
-  de: { start: 'Interview starten', lang: 'Sprache', country: 'Wohnland / Region', age: 'Alter', gender: 'Geschlecht', visited: 'Waren Sie schon einmal in Japan?', optional: '(optional)', consent: 'Ihre Antworten sind anonym und werden nur für Forschungszwecke verwendet. Bitte geben Sie keinen Namen oder Kontaktdaten ein.', ph: 'Ihre Antwort…', send: 'Senden', end: 'Interview beenden', confirmEnd: 'Interview jetzt beenden?', thanks: 'Vielen Dank! Das Interview ist beendet. Sie können diese Seite schließen.', closed: 'Dieses Interview ist geschlossen.', err: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.', q: 'Frage', yes: 'Ja', no: 'Nein', many: 'Mehrmals', sel: 'Auswählen', male: 'Männlich', female: 'Weiblich', other: 'Divers / keine Angabe', notfound: 'Interview nicht gefunden.', rateQ: 'Wie fanden Sie dieses Interview?', rateC: 'Anmerkungen? (optional)', rateSend: 'Senden', rateThanks: 'Danke für Ihr Feedback!' },
+  en: { start: 'Start interview', lang: 'Language', country: 'Country / region you live in', age: 'Age', gender: 'Gender', visited: 'Have you been to Japan?', optional: '(optional)', consent: 'Your answers are anonymous and used only for research. Please do not enter your name or contact details.', ph: 'Type your answer…', send: 'Send', end: 'End interview', confirmEnd: 'End the interview now?', thanks: 'Thank you! Your interview is complete. You can close this page.', closed: 'This interview is currently closed.', err: 'Something went wrong. Please try again.', q: 'Question', yes: 'Yes', no: 'No', many: 'Several times', sel: 'Select', male: 'Male', female: 'Female', other: 'Other / prefer not to say', notfound: 'Interview not found.', rateQ: 'How was this interview?', rateC: 'Any comments? (optional)', rateSend: 'Send', rateThanks: 'Thank you for your feedback!', hello: "Hi! I'd love to hear your honest thoughts about Japanese culture.", about: 'About you' },
+  ja: { start: 'インタビューを始める', lang: '言語', country: 'お住まいの国・地域', age: '年齢', gender: '性別', visited: '日本に行ったことはありますか?', optional: '(任意)', consent: '回答は匿名で、調査目的にのみ使用します。お名前や連絡先は入力しないでください。', ph: '回答を入力…', send: '送信', end: 'インタビューを終える', confirmEnd: 'インタビューを終了しますか?', thanks: 'ありがとうございました。インタビューは終了です。このページを閉じてください。', closed: 'このインタビューは現在受付を終了しています。', err: 'エラーが発生しました。もう一度お試しください。', q: '質問', yes: 'はい', no: 'いいえ', many: '何度もある', sel: '選択', male: '男性', female: '女性', other: 'その他・回答しない', notfound: 'インタビューが見つかりません。', rateQ: 'このインタビューはいかがでしたか?', rateC: 'ご意見があれば(任意)', rateSend: '送信', rateThanks: 'ご意見ありがとうございました!', hello: 'こんにちは!日本の文化について、あなたの率直な感想を聞かせてください。', about: 'あなたについて' },
+  'zh-CN': { start: '开始访谈', lang: '语言', country: '居住国家/地区', age: '年龄', gender: '性别', visited: '您去过日本吗?', optional: '(可选)', consent: '您的回答是匿名的,仅用于研究。请勿输入姓名或联系方式。', ph: '请输入您的回答…', send: '发送', end: '结束访谈', confirmEnd: '现在结束访谈吗?', thanks: '谢谢!访谈已完成,您可以关闭此页面。', closed: '此访谈目前已关闭。', err: '出现错误,请重试。', q: '问题', yes: '是', no: '否', many: '去过多次', sel: '请选择', male: '男', female: '女', other: '其他/不愿透露', notfound: '找不到访谈。', rateQ: '您对这次访谈满意吗?', rateC: '其他意见(可选)', rateSend: '提交', rateThanks: '感谢您的反馈!', hello: '你好!想听听你对日本文化的真实感受。', about: '关于你' },
+  'zh-TW': { start: '開始訪談', lang: '語言', country: '居住國家/地區', age: '年齡', gender: '性別', visited: '您去過日本嗎?', optional: '(選填)', consent: '您的回答為匿名,僅用於研究。請勿輸入姓名或聯絡方式。', ph: '請輸入您的回答…', send: '送出', end: '結束訪談', confirmEnd: '現在結束訪談嗎?', thanks: '謝謝!訪談已完成,您可以關閉此頁面。', closed: '此訪談目前已關閉。', err: '發生錯誤,請再試一次。', q: '問題', yes: '是', no: '否', many: '去過多次', sel: '請選擇', male: '男', female: '女', other: '其他/不願透露', notfound: '找不到訪談。', rateQ: '您對這次訪談滿意嗎?', rateC: '其他意見(選填)', rateSend: '送出', rateThanks: '感謝您的回饋!', hello: '你好!想聽聽你對日本文化的真實感受。', about: '關於你' },
+  ko: { start: '인터뷰 시작', lang: '언어', country: '거주 국가/지역', age: '나이', gender: '성별', visited: '일본에 가 본 적이 있나요?', optional: '(선택)', consent: '답변은 익명으로 연구 목적으로만 사용됩니다. 이름이나 연락처는 입력하지 마세요.', ph: '답변을 입력하세요…', send: '보내기', end: '인터뷰 종료', confirmEnd: '지금 인터뷰를 종료할까요?', thanks: '감사합니다! 인터뷰가 끝났습니다. 이 페이지를 닫으셔도 됩니다.', closed: '이 인터뷰는 현재 마감되었습니다.', err: '오류가 발생했습니다. 다시 시도해 주세요.', q: '질문', yes: '예', no: '아니요', many: '여러 번', sel: '선택', male: '남성', female: '여성', other: '기타/응답 안 함', notfound: '인터뷰를 찾을 수 없습니다.', rateQ: '이번 인터뷰는 어떠셨나요?', rateC: '의견이 있으면 적어 주세요(선택)', rateSend: '보내기', rateThanks: '의견 감사합니다!', hello: '안녕하세요! 일본 문화에 대한 솔직한 생각을 들려주세요.', about: '당신에 대해' },
+  es: { start: 'Comenzar la entrevista', lang: 'Idioma', country: 'País / región donde vive', age: 'Edad', gender: 'Género', visited: '¿Ha estado en Japón?', optional: '(opcional)', consent: 'Sus respuestas son anónimas y solo se usan para investigación. No escriba su nombre ni datos de contacto.', ph: 'Escriba su respuesta…', send: 'Enviar', end: 'Terminar entrevista', confirmEnd: '¿Terminar la entrevista ahora?', thanks: '¡Gracias! La entrevista ha terminado. Puede cerrar esta página.', closed: 'Esta entrevista está cerrada.', err: 'Algo salió mal. Inténtelo de nuevo.', q: 'Pregunta', yes: 'Sí', no: 'No', many: 'Varias veces', sel: 'Seleccionar', male: 'Hombre', female: 'Mujer', other: 'Otro / prefiero no decirlo', notfound: 'Entrevista no encontrada.', rateQ: '¿Qué le pareció esta entrevista?', rateC: '¿Algún comentario? (opcional)', rateSend: 'Enviar', rateThanks: '¡Gracias por su opinión!', hello: '¡Hola! Me encantaría conocer tu opinión sincera sobre la cultura japonesa.', about: 'Sobre ti' },
+  fr: { start: "Commencer l'entretien", lang: 'Langue', country: 'Pays / région de résidence', age: 'Âge', gender: 'Genre', visited: 'Êtes-vous déjà allé(e) au Japon ?', optional: '(facultatif)', consent: 'Vos réponses sont anonymes et utilisées uniquement à des fins de recherche. N’indiquez pas votre nom ni vos coordonnées.', ph: 'Écrivez votre réponse…', send: 'Envoyer', end: "Terminer l'entretien", confirmEnd: "Terminer l'entretien maintenant ?", thanks: "Merci ! L'entretien est terminé. Vous pouvez fermer cette page.", closed: 'Cet entretien est fermé.', err: 'Une erreur est survenue. Veuillez réessayer.', q: 'Question', yes: 'Oui', no: 'Non', many: 'Plusieurs fois', sel: 'Choisir', male: 'Homme', female: 'Femme', other: 'Autre / ne souhaite pas répondre', notfound: 'Entretien introuvable.', rateQ: 'Comment avez-vous trouvé cet entretien ?', rateC: 'Un commentaire ? (facultatif)', rateSend: 'Envoyer', rateThanks: 'Merci pour votre avis !', hello: 'Bonjour ! J’aimerais connaître votre avis sincère sur la culture japonaise.', about: 'À propos de vous' },
+  de: { start: 'Interview starten', lang: 'Sprache', country: 'Wohnland / Region', age: 'Alter', gender: 'Geschlecht', visited: 'Waren Sie schon einmal in Japan?', optional: '(optional)', consent: 'Ihre Antworten sind anonym und werden nur für Forschungszwecke verwendet. Bitte geben Sie keinen Namen oder Kontaktdaten ein.', ph: 'Ihre Antwort…', send: 'Senden', end: 'Interview beenden', confirmEnd: 'Interview jetzt beenden?', thanks: 'Vielen Dank! Das Interview ist beendet. Sie können diese Seite schließen.', closed: 'Dieses Interview ist geschlossen.', err: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.', q: 'Frage', yes: 'Ja', no: 'Nein', many: 'Mehrmals', sel: 'Auswählen', male: 'Männlich', female: 'Weiblich', other: 'Divers / keine Angabe', notfound: 'Interview nicht gefunden.', rateQ: 'Wie fanden Sie dieses Interview?', rateC: 'Anmerkungen? (optional)', rateSend: 'Senden', rateThanks: 'Danke für Ihr Feedback!', hello: 'Hallo! Ich möchte gern Ihre ehrliche Meinung zur japanischen Kultur hören.', about: 'Über Sie' },
 };
+
+
+// オリジナルのキャラクター「ちゃわんさん」(金継ぎの線が入った茶碗)
+const MASCOT = (mood = 'smile') => `<svg class="mascot" viewBox="0 0 160 150" aria-hidden="true">
+  <ellipse cx="80" cy="138" rx="52" ry="7" fill="#f1c9cf"/>
+  <path d="M62 22c-6-8 4-12 0-20M80 24c-6-9 5-13 0-22M98 22c-6-8 4-12 0-20" stroke="#f3b6bf" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M18 44h124c0 50-26 86-62 86S18 94 18 44z" fill="#fff" stroke="#2b3a67" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M18 44h124" stroke="#2b3a67" stroke-width="4"/>
+  <path d="M24 62c20 6 40-4 56 2s36 6 56-2" fill="none" stroke="#2b3a67" stroke-width="3" opacity=".25"/>
+  <path d="M104 46l-8 18 12 10-10 16 6 12" fill="none" stroke="#c9a24a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="56" cy="86" rx="7" ry="${mood === 'joy' ? 3 : 8}" fill="#2a2a2e"/>
+  <ellipse cx="88" cy="86" rx="7" ry="${mood === 'joy' ? 3 : 8}" fill="#2a2a2e"/>
+  <circle cx="58" cy="83" r="2.2" fill="#fff"/><circle cx="90" cy="83" r="2.2" fill="#fff"/>
+  <ellipse cx="44" cy="100" rx="8" ry="5" fill="#f5b3be"/><ellipse cx="100" cy="100" rx="8" ry="5" fill="#f5b3be"/>
+  <path d="M64 100q8 ${mood === 'joy' ? 10 : 7} 16 0" fill="none" stroke="#2a2a2e" stroke-width="3" stroke-linecap="round"/>
+</svg>`;
+const AV = () => `<svg class="av" viewBox="0 0 160 150"><circle cx="80" cy="76" r="74" fill="#fbe4e6"/>${MASCOT().replace(/^<svg[^>]*>|<\/svg>$/g, '')}</svg>`;
+const SAKURA = '<svg viewBox="0 0 24 24"><path d="M12 2c1.6 1.8 2 3.7 1.2 5.6 1.8-.9 3.9-.9 5.6.4.5 2.3-.5 4.1-2.2 5.2 2 .2 3.6 1.4 4.2 3.5-1 2.1-3 2.8-5 2.4 1 1.7.9 3.7-.6 5.3-2.3-.1-3.6-1.6-4-3.6-.6 1.9-2 3.3-4.2 3.6-1.5-1.6-1.6-3.6-.6-5.3-2 .4-4-.3-5-2.4.6-2.1 2.2-3.3 4.2-3.5C5.9 12.1 5 10.3 5.4 8c1.7-1.3 3.8-1.3 5.6-.4C10 5.7 10.4 3.8 12 2z"/></svg>';
 
 const studyId = location.pathname.split('/').filter(Boolean)[1];
 const app = document.getElementById('app');
@@ -87,7 +153,7 @@ function guessLang(list) {
 async function init() {
   try {
     [study, LANGS] = await Promise.all([api(`/api/public/studies/${studyId}`), api('/api/languages')]);
-  } catch { app.innerHTML = `<div class="done">${UI.en.notfound}</div>`; return; }
+  } catch { app.innerHTML = `<div class="notice">${UI.en.notfound}</div>`; return; }
   document.title = study.title;
   const saved = JSON.parse(localStorage.getItem(store) || 'null');
   if (saved?.token) {
@@ -95,7 +161,7 @@ async function init() {
     try { session = await api(`/api/public/sessions/${saved.id}`); lang = session.language; return renderChat(); }
     catch { localStorage.removeItem(store); token = null; }
   }
-  if (!study.active) { lang = guessLang(Object.keys(UI)); app.innerHTML = `<div class="done">${t('closed')}</div>`; return; }
+  if (!study.active) { lang = guessLang(Object.keys(UI)); app.innerHTML = `<div class="notice">${MASCOT()}<p>${t('closed')}</p></div>`; return; }
   const list = study.languages?.length ? study.languages : Object.keys(LANGS);
   lang = guessLang(list);
   renderIntro(list);
@@ -106,20 +172,29 @@ function renderIntro(list) {
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   const ages = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
   app.innerHTML = `
+  <div class="seigaiha"></div>
   <div class="intro">
-    <h2>${esc(study.title)}</h2>
-    ${study.intro ? `<p>${esc(study.intro)}</p>` : ''}
-    <div class="field"><label>${t('lang')}</label>
+    <div class="brand">✿ ${esc(LANGS[lang] || '')}</div>
+    <div class="hero">
+      <span class="kasumi" style="width:120px;height:34px;left:-20px;top:40px"></span>
+      <span class="kasumi" style="width:90px;height:26px;right:-10px;top:150px"></span>
+      ${MASCOT()}
+      <div class="bubble">${esc(t('hello'))}</div>
+    </div>
+    <h2 class="title">${esc(study.title)}</h2>
+    ${study.intro ? `<p class="lead">${esc(study.intro)}</p>` : ''}
+    <div class="card sect"><h3>${t('lang')}</h3>
       <div class="langs">${list.map((l) => `<button data-l="${l}" class="${l === lang ? 'on' : ''}">${esc(LANGS[l])}</button>`).join('')}</div></div>
     ${study.askProfile ? `
-    <div class="field"><label>${t('country')} ${t('optional')}</label><input id="country" maxlength="80"></div>
-    <div class="grid2">
-      <div class="field"><label>${t('age')} ${t('optional')}</label><select id="age"><option value="">${t('sel')}</option>${ages.map((a) => `<option>${a}</option>`).join('')}</select></div>
-      <div class="field"><label>${t('gender')} ${t('optional')}</label><select id="gender"><option value="">${t('sel')}</option><option value="male">${t('male')}</option><option value="female">${t('female')}</option><option value="other">${t('other')}</option></select></div>
-    </div>
-    <div class="field"><label>${t('visited')} ${t('optional')}</label><select id="visited"><option value="">${t('sel')}</option><option value="no">${t('no')}</option><option value="yes">${t('yes')}</option><option value="many">${t('many')}</option></select></div>` : ''}
-    <p class="small">${t('consent')}</p>
-    <button class="btn primary big" id="start">${t('start')}</button>
+    <div class="card sect"><h3>${t('about')} <span class="small">${t('optional')}</span></h3>
+      <div class="field"><label>${t('country')}</label><input id="country" maxlength="80"></div>
+      <div class="grid2">
+        <div class="field"><label>${t('age')}</label><select id="age"><option value="">${t('sel')}</option>${ages.map((a) => `<option>${a}</option>`).join('')}</select></div>
+        <div class="field"><label>${t('gender')}</label><select id="gender"><option value="">${t('sel')}</option><option value="male">${t('male')}</option><option value="female">${t('female')}</option><option value="other">${t('other')}</option></select></div>
+      </div>
+      <div class="field" style="margin:0"><label>${t('visited')}</label><select id="visited"><option value="">${t('sel')}</option><option value="no">${t('no')}</option><option value="yes">${t('yes')}</option><option value="many">${t('many')}</option></select></div></div>` : ''}
+    <p class="consent">${t('consent')}</p>
+    <button class="go" id="start">${t('start')}</button>
   </div>`;
   app.querySelectorAll('.langs button').forEach((b) => b.onclick = () => {
     const keep = readProfile(); lang = b.dataset.l; renderIntro(list); writeProfile(keep);
@@ -144,15 +219,15 @@ function renderChat() {
   document.documentElement.lang = lang;
   document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   app.innerHTML = `
-    <header class="top"><h1>${esc(study.title)}</h1><span class="progress" id="prog"></span></header>
+    <header class="top"><div class="row1">${AV()}<h1>${esc(study.title)}</h1><span class="count" id="prog"></span></div><div class="dots" id="dots"></div></header>
     <div class="chat" id="chat"></div>
     <div class="composer" id="composer">
       <div class="quick" id="quick"></div>
-      <div class="row">
+      <div class="inbar">
         <textarea id="input" rows="1" placeholder="${t('ph')}"></textarea>
-        <button class="btn primary" id="send">${t('send')}</button>
+        <button class="send" id="send" aria-label="${t('send')}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
       </div>
-      <div class="sub"><span></span><button id="end">${t('end')}</button></div>
+      <button class="endlink" id="end">${t('end')}</button>
     </div>`;
   const input = app.querySelector('#input');
   input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 160) + 'px'; });
@@ -169,17 +244,20 @@ function drawMessages(typing = false) {
     if (m.material) {
       h += `<div class="material">${/^image\//.test(m.material.mimeType) ? `<img src="${m.material.url}" alt="${esc(m.material.name)}">` : ''}<a href="${m.material.url}" target="_blank" rel="noopener">📄 ${esc(m.material.name)}</a></div>`;
     }
-    return h + `<div class="msg ${m.role === 'ai' ? 'ai' : 'user'}">${esc(m.text)}</div>`;
-  }).join('') + (typing ? '<div class="typing"><span>●</span> <span>●</span> <span>●</span></div>' : '');
+    return h + (m.role === 'ai' ? `<div class="ai-row">${AV()}<div class="msg ai">${esc(m.text)}</div></div>` : `<div class="msg user">${esc(m.text)}</div>`);
+  }).join('') + (typing ? `<div class="ai-row">${AV()}<div class="msg ai typing"><i></i><i></i><i></i></div></div>` : '');
   const qn = session.messages.filter((m) => m.role === 'ai').length;
-  document.getElementById('prog').textContent = session.status === 'active' ? `${t('q')} ${qn}` : '';
+  const total = Math.max(study.maxQuestions || 10, qn);
+  const active = session.status === 'active';
+  document.getElementById('prog').textContent = active ? `${t('q')} ${qn} / ${total}` : '';
+  document.getElementById('dots').innerHTML = active ? Array.from({ length: Math.min(total, 15) }, (_, i) => `<span class="dot ${i + 1 < qn ? 'past' : i + 1 === qn ? 'now' : ''}">${i + 1 === qn ? qn : ''}</span>`).join('') : '';
   const quick = document.getElementById('quick');
   if (quick) {
     quick.innerHTML = typing ? '' : (session.quickReplies || []).map((q) => `<button>${esc(q)}</button>`).join('');
     quick.querySelectorAll('button').forEach((b) => b.onclick = () => { document.getElementById('input').value = b.textContent; answer(); });
   }
   if (session.status !== 'active' && document.getElementById('composer')) {
-    document.getElementById('composer').outerHTML = `<div class="done">${t('thanks')}</div><div class="rating" id="rating"></div>`;
+    document.getElementById('composer').outerHTML = `<div class="done">${MASCOT('joy')}<p>${t('thanks')}</p></div><div class="card rating" id="rating"></div>`;
     renderRating();
   }
   window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -212,8 +290,8 @@ function renderRating() {
   if (!el) return;
   if (session.rated) { el.innerHTML = `<p class="small">${t('rateThanks')}</p>`; localStorage.removeItem(store); return; }
   let score = 0;
-  el.innerHTML = `<div><b>${t('rateQ')}</b></div><div class="stars">${[1, 2, 3, 4, 5].map((n) => `<button data-n="${n}" aria-label="${n}">★</button>`).join('')}</div>
-    <textarea id="rc" rows="2" placeholder="${t('rateC')}"></textarea><button class="btn primary big" id="rs" disabled>${t('rateSend')}</button>`;
+  el.innerHTML = `<div><b>${t('rateQ')}</b></div><div class="stars">${[1, 2, 3, 4, 5].map((n) => `<button data-n="${n}" aria-label="${n}">${SAKURA}</button>`).join('')}</div>
+    <textarea id="rc" rows="2" placeholder="${t('rateC')}"></textarea><button class="go" id="rs" disabled>${t('rateSend')}</button>`;
   el.querySelectorAll('.stars button').forEach((b) => b.onclick = () => { score = +b.dataset.n; el.querySelectorAll('.stars button').forEach((x) => x.classList.toggle('on', +x.dataset.n <= score)); el.querySelector('#rs').disabled = false; });
   el.querySelector('#rs').onclick = async () => {
     try { session = await api(`/api/public/sessions/${session.id}/rating`, { method: 'POST', body: JSON.stringify({ score, comment: el.querySelector('#rc').value }) }); } catch { session.rated = true; }

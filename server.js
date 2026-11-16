@@ -405,7 +405,7 @@ function serveFile(res, file) {
   send(res, 200, fs.readFileSync(file), { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream' });
 }
 function publicStudy(s) {
-  return { id: s.id, title: s.publicTitle || s.title, intro: s.intro || '', languages: s.languages || [], active: s.active !== false, askProfile: s.askProfile !== false };
+  return { id: s.id, title: s.publicTitle || s.title, intro: s.intro || '', languages: s.languages || [], active: s.active !== false, askProfile: s.askProfile !== false, maxQuestions: Number(s.maxQuestions) || 10 };
 }
 function publicSession(s, study) {
   const lastAi = [...s.messages].reverse().find((m) => m.role === 'ai');
