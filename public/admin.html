@@ -10,6 +10,7 @@
   aside { background: var(--ai); color: #fff; padding: 18px 14px; }
   aside h1 { font-size: 16px; margin: 0 0 4px; }
   aside .sub { font-size: 11px; opacity: .75; margin-bottom: 16px; line-height: 1.6; }
+  details.more { margin-top: 4px; } details.more summary { cursor: pointer; font-size: 13px; color: var(--muted); margin-bottom: 12px; }
   aside .study { display: block; width: 100%; text-align: left; background: transparent; border: 0; color: #fff; padding: 10px; border-radius: 8px; cursor: pointer; font: inherit; font-size: 14px; }
   aside .study.on, aside .study:hover { background: rgba(255,255,255,.14); }
   aside .study small { display: block; opacity: .7; font-size: 11px; margin-top: 2px; }
@@ -93,7 +94,7 @@ async function download(path, name) {
 
 function renderLogin(msg = '') {
   root.innerHTML = `<div class="login card">
-    <h3>AIインタビュー 管理者ログイン</h3>
+    <h3>管理者ログイン</h3>
     <div class="field"><label>パスワード</label><input type="password" id="pw" autofocus></div>
     ${msg ? `<p style="color:var(--accent);font-size:13px">${esc(msg)}</p>` : ''}
     <button class="btn primary big" id="login">ログイン</button></div>`;
@@ -118,9 +119,9 @@ function render() {
   root.innerHTML = `<div class="layout">
     <aside>
       <h1>AIインタビュー</h1>
-      <div class="sub">管理者画面 · ${esc(status.mock ? 'デモモード' : status.model)}<br>本日のAI利用: ${status.usageToday} / ${status.dailyLimit} 回</div>
-      <button class="btn new" id="new">＋ 新しい調査を作る</button>
-      ${studies.map((x) => `<button class="study ${x.id === current ? 'on' : ''}" data-id="${x.id}">${esc(x.title)}<small>${x.active === false ? '受付停止 · ' : ''}回答 ${x.sessionCount}件</small></button>`).join('')}
+      <div class="sub">${status.mock ? 'デモモード · ' : ''}AI ${status.usageToday}/${status.dailyLimit}</div>
+      <button class="btn new" id="new">＋ 新規</button>
+      ${studies.map((x) => `<button class="study ${x.id === current ? 'on' : ''}" data-id="${x.id}">${esc(x.title)}<small>${x.active === false ? '停止 · ' : ''}${x.sessionCount}件</small></button>`).join('')}
       <div style="margin-top:20px"><button class="study" id="logout">ログアウト</button></div>
     </aside>
     <main id="main"></main></div>`;
@@ -129,24 +130,22 @@ function render() {
   $('#logout').onclick = () => { sessionStorage.removeItem('adminToken'); token = null; renderLogin(); };
   const main = $('#main');
   const banners = [];
-  if (status.mock) banners.push('GEMINI_API_KEY が設定されていないため、<b>デモモード</b>(AIの代わりに決まった文章を返す)で動いています。.env に GEMINI_API_KEY を設定してサーバーを再起動してください。');
-  if (!status.cloud) banners.push('回答データはこのサーバーのフォルダにだけ保存されています。Renderの無料プランでは再起動で消えるため、公開するときは SUPABASE_URL と SUPABASE_SECRET_KEY を設定してください(README参照)。');
-  if (status.defaultPassword) banners.push('管理者パスワードが初期値 (admin) のままです。公開する前に .env の ADMIN_PASSWORD を変更してください。');
+  if (status.mock) banners.push('デモモード(GEMINI_API_KEY 未設定)');
+  if (!status.cloud) banners.push('Supabase未設定: 再起動で回答が消えます');
+  if (status.defaultPassword) banners.push('パスワードが初期値 (admin) のままです');
   main.innerHTML = banners.map((b) => `<div class="banner">${b}</div>`).join('');
   if (current === 'new') {
     const box = document.createElement('div'); main.appendChild(box);
     return renderSettings(box, draft || { title: '', objectives: '', topics: '', instructions: '', intro: '', publicTitle: '', maxQuestions: 10, languages: ['en', 'zh-CN', 'zh-TW', 'ko', 'es', 'fr', 'de'], askProfile: true, active: true, materials: [], questions: [] }, true);
   }
-  if (!s) { main.innerHTML += `<div class="empty">左の「＋ 新しい調査を作る」から始めてください。</div>`; return; }
+  if (!s) { main.innerHTML += `<div class="empty">「＋ 新規」から作成</div>`; return; }
   const link = `${location.origin}/i/${s.id}`;
-  const tabs = [['settings', '設定・質問・資料'], ['sessions', `回答一覧 (${s.sessionCount})`], ['stats', '統計・検索'], ['analysis', 'AI全体分析・書き出し'], ['test', 'テスト(AI模擬回答)']];
+  const tabs = [['settings', '設定'], ['sessions', `回答 ${s.sessionCount}`], ['stats', '統計'], ['analysis', '分析'], ['test', 'テスト']];
   main.insertAdjacentHTML('beforeend', `
-    <div class="head"><h2>${esc(s.title)}</h2>${s.active === false ? '<span class="pill">受付停止中</span>' : '<span class="pill completed">受付中</span>'}</div>
-    <div class="card"><h3>回答者に送るリンク</h3>
-      <div class="share"><input readonly value="${esc(link)}" id="link"><button class="btn" id="copy">コピー</button><a class="btn" href="${esc(link)}" target="_blank">回答者画面を開く</a></div>
-      <div class="hint">このリンクを海外の回答者に送ると、言語を選んでAIインタビューに答えられます。ログインは不要です。</div></div>
+    <div class="head"><h2>${esc(s.title)}</h2>${s.active === false ? '<span class="pill">停止中</span>' : '<span class="pill completed">受付中</span>'}</div>
+    <div class="share" style="margin-bottom:16px"><input readonly value="${esc(link)}" id="link"><button class="btn" id="copy">コピー</button><a class="btn" href="${esc(link)}" target="_blank">開く</a></div>
     <div class="tabs">${tabs.map(([k, v]) => `<button data-t="${k}" class="${tab === k ? 'on' : ''}">${v}</button>`).join('')}</div><div id="tab"></div>`);
-  $('#copy').onclick = () => { navigator.clipboard.writeText(link); $('#copy').textContent = 'コピーしました'; };
+  $('#copy').onclick = () => { navigator.clipboard.writeText(link); $('#copy').textContent = '✓'; };
   main.querySelectorAll('.tabs button').forEach((b) => b.onclick = () => { tab = b.dataset.t; draft = null; render(); });
   const el = $('#tab');
   if (tab === 'settings') (draft ? Promise.resolve(draft) : api(`/api/admin/studies/${s.id}`)).then((full) => renderSettings(el, full, false));
@@ -161,61 +160,62 @@ function renderSettings(el, s, isNew) {
   let questions = (s.questions || []).map((q) => ({ ...q, quickReplies: Array.isArray(q.quickReplies) ? q.quickReplies.join(' / ') : q.quickReplies || '' }));
   let mats = (s.materials || []).map((m) => ({ ...m }));
   el.innerHTML = `
-  <div class="card"><h3>✨ 資料からAIで設定を作る</h3>
-    ${isNew ? '<p class="hint" style="margin:0">まず下で調査名を入れて資料を追加し、「作成する」を押してください。そのあとここから、資料を読んだAIが調査目的・質問リスト・案内文を作ります。</p>' : `
-    <p class="hint" style="margin-top:0">保存済みの資料をGeminiが読み、調査目的・質問リスト(深掘りの指示・選択肢つき)・回答者向けの案内文を作ってフォームに入れます。内容を確認してから「保存する」を押してください。</p>
-    <div class="row"><input id="hint" placeholder="要望(任意) 例: 価格感と、SNSで共有したいかを重点的に" style="flex:1"><button class="btn primary" id="gen">AIで作る</button></div><div class="small" id="genmsg"></div>`}
-  </div>
-  <div class="card"><h3>${isNew ? '新しい調査' : '調査の設定'}</h3>
-    <div class="field"><label>調査名(管理用)</label><input id="title" value="${esc(s.title)}" placeholder="例: 茶道体験に対する欧米観光客の反応調査"></div>
-    <div class="field"><label>調査目的</label><textarea id="objectives" rows="3" placeholder="例: 茶道体験ツアーの商品化に向けて、欧米の20〜40代が感じる魅力・障壁・支払意向を把握する">${esc(s.objectives)}</textarea>
-      <div class="hint">AIはこの目的に沿って質問を組み立てます。</div></div>
-    <div class="field"><label>必ず聞きたいテーマ</label><textarea id="topics" rows="2" placeholder="例: 第一印象 / 体験したいか / 価格感 / 不安な点 / 自国の文化との比較">${esc(s.topics)}</textarea></div>
-    <div class="field"><label>AIへの追加指示(任意)</label><textarea id="instructions" rows="2" placeholder="例: 抹茶の味についても必ず聞く。カジュアルな口調で。">${esc(s.instructions)}</textarea></div>
+  ${isNew ? '' : `<div class="card"><div class="row"><input id="hint" placeholder="AIへの要望(任意)" style="flex:1"><button class="btn primary" id="gen">✨ 資料からAIで作成</button></div><div class="small" id="genmsg"></div></div>`}
+  <div class="card">
+    <div class="field"><label>調査名</label><input id="title" value="${esc(s.title)}"></div>
+    <div class="field"><label>目的</label><textarea id="objectives" rows="3">${esc(s.objectives)}</textarea></div>
+    <div class="field"><label>テーマ</label><textarea id="topics" rows="2">${esc(s.topics)}</textarea></div>
+    <details class="more"><summary>詳細設定</summary>
+    <div class="field"><label>AIへの追加指示</label><textarea id="instructions" rows="2">${esc(s.instructions)}</textarea></div>
     <div class="grid2">
-      <div class="field"><label>質問数の上限</label><input id="maxQuestions" type="number" min="1" max="40" value="${esc(s.maxQuestions)}"><div class="hint">深掘りも1問と数えます。質問リストより多めに設定してください。</div></div>
-      <div class="field"><label>回答者向けの表示タイトル(任意)</label><input id="publicTitle" value="${esc(s.publicTitle)}" placeholder="例: Japanese Culture Interview"></div>
+      <div class="field"><label>質問数の上限</label><input id="maxQuestions" type="number" min="1" max="40" value="${esc(s.maxQuestions)}"></div>
+      <div class="field"><label>表示タイトル</label><input id="publicTitle" value="${esc(s.publicTitle)}"></div>
     </div>
-    <div class="field"><label>回答者向けの案内文(任意)</label><textarea id="intro" rows="3" placeholder="例: This 10-minute interview asks about your impressions of traditional Japanese culture.">${esc(s.intro)}</textarea><div class="hint">開始画面に表示されます。英語で書くのがおすすめです(質問自体はAIが回答者の言語で行います)。</div></div>
-    <div class="field"><label>回答者が選べる言語</label><div class="langgrid">${Object.entries(LANGS).map(([k, v]) => `<label><input type="checkbox" value="${k}" ${s.languages?.includes(k) ? 'checked' : ''}>${esc(v)}</label>`).join('')}</div>
-      <div class="hint">回答者が一覧にない言語で書いた場合も、AIはその言語に合わせて話します。</div></div>
-    <div class="row"><label class="check"><input type="checkbox" id="askProfile" ${s.askProfile !== false ? 'checked' : ''}>開始前に国・年齢・性別・訪日経験を聞く(任意回答)</label>
-      <label class="check"><input type="checkbox" id="active" ${s.active !== false ? 'checked' : ''}>回答を受け付ける</label></div>
+    <div class="field"><label>案内文</label><textarea id="intro" rows="3">${esc(s.intro)}</textarea></div>
+    <div class="field"><label>言語</label><div class="langgrid">${Object.entries(LANGS).map(([k, v]) => `<label><input type="checkbox" value="${k}" ${s.languages?.includes(k) ? 'checked' : ''}>${esc(v)}</label>`).join('')}</div></div>
+    <div class="row"><label class="check"><input type="checkbox" id="askProfile" ${s.askProfile !== false ? 'checked' : ''}>属性を聞く</label>
+      <label class="check"><input type="checkbox" id="active" ${s.active !== false ? 'checked' : ''}>受付中</label></div>
+    </details>
   </div>
-  <div class="card"><h3>質問リスト(任意)</h3>
-    <p class="hint" style="margin-top:0">AIはこの順番で質問し、答えに応じて深掘りします。日本語で書けば、AIが回答者の言語に訳して聞きます。空のままなら、AIが調査目的と資料から自分で質問を組み立てます。<br>コツ: 最初は答えやすい質問から、「広い→狭い」の順に。関心度や価格感は段階的な選択肢をつけると集計しやすくなります。</p>
-    <div id="qs"></div><button class="btn small" id="addq" style="margin-top:10px">＋ 質問を追加</button>
+  <div class="card"><h3>質問</h3>
+    <div id="qs"></div><button class="btn small" id="addq" style="margin-top:10px">＋ 追加</button>
   </div>
-  <div class="card"><h3>資料(多言語OK)</h3>
-    <p class="hint" style="margin-top:0">文化の説明、商品やサービスの紹介、画像、PDFなどを入れてください。何語の資料でもAIが読み取って質問に使います。「回答者に見せる」をオンにすると、AIが話の流れに合わせて回答者に資料を提示し、感想を聞きます。</p>
-    <table><thead><tr><th>ファイル</th><th>AIへのメモ(任意)</th><th>回答者に見せる</th><th></th></tr></thead><tbody id="mats"></tbody></table>
-    <div class="drop" id="drop" style="margin-top:12px">ここにファイルをドロップ、またはクリックして選択<br><small>PDF・画像(PNG/JPG/WEBP)・テキスト(TXT/MD/CSV)・音声・動画 / 合計30MBまで</small></div>
+  <div class="card"><h3>資料</h3>
+    <table><thead><tr><th>ファイル</th><th>メモ</th><th>表示</th><th></th></tr></thead><tbody id="mats"></tbody></table>
+    <div class="drop" id="drop" style="margin-top:12px">＋ ファイルを追加</div>
     <input type="file" id="file" multiple hidden accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.md,.csv,.json,audio/*,video/*">
   </div>
-  <div class="row"><button class="btn primary" id="save">${isNew ? '作成する' : '保存する'}</button>
-    ${isNew ? '' : '<button class="btn danger" id="del">この調査を削除</button>'}<span id="msg" class="small"></span></div>`;
+  <div class="row"><button class="btn primary" id="save">${isNew ? '作成' : '保存'}</button>
+    <button class="btn" id="clearAll" title="資料以外の文言を空にします">全消去</button>
+    ${isNew ? '' : '<button class="btn danger" id="del">削除</button>'}<span id="msg" class="small"></span></div>`;
 
   const drawQs = () => {
     $('#qs', el).innerHTML = questions.length ? questions.map((q, i) => `<div class="q">
       <div class="num">${i + 1}</div>
-      <div><input data-i="${i}" data-f="text" value="${esc(q.text)}" placeholder="質問文 例: 茶道と聞いて、どんなイメージが浮かびますか?">
-        <input data-i="${i}" data-f="followUp" value="${esc(q.followUp || '')}" placeholder="深掘りの指示(任意) 例: 具体的な場面や、そう感じたきっかけを聞く">
-        <input data-i="${i}" data-f="quickReplies" value="${esc(q.quickReplies)}" placeholder="選択肢ボタン(任意・/区切り) 例: とても興味がある / やや興味がある / どちらとも言えない / あまりない"></div>
-      <div class="ctl"><button class="btn small" data-mv="${i}:-1" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn small" data-mv="${i}:1" ${i === questions.length - 1 ? 'disabled' : ''}>↓</button><button class="btn small danger" data-rq="${i}">×</button></div></div>`).join('') : '<p class="hint">まだ質問がありません</p>';
+      <div><input data-i="${i}" data-f="text" value="${esc(q.text)}" placeholder="質問">
+        <input data-i="${i}" data-f="followUp" value="${esc(q.followUp || '')}" placeholder="深掘り(任意)">
+        <input data-i="${i}" data-f="quickReplies" value="${esc(q.quickReplies)}" placeholder="選択肢(任意) A / B / C"></div>
+      <div class="ctl"><button class="btn small" data-mv="${i}:-1" ${i === 0 ? 'disabled' : ''}>↑</button><button class="btn small" data-mv="${i}:1" ${i === questions.length - 1 ? 'disabled' : ''}>↓</button><button class="btn small danger" data-rq="${i}">×</button></div></div>`).join('') : '<p class="hint">なし(AIにおまかせ)</p>';
     el.querySelectorAll('#qs input').forEach((inp) => inp.oninput = () => { questions[inp.dataset.i][inp.dataset.f] = inp.value; });
     el.querySelectorAll('[data-mv]').forEach((b) => b.onclick = () => { const [i, d] = b.dataset.mv.split(':').map(Number); [questions[i], questions[i + d]] = [questions[i + d], questions[i]]; drawQs(); });
     el.querySelectorAll('[data-rq]').forEach((b) => b.onclick = () => { questions.splice(+b.dataset.rq, 1); drawQs(); });
   };
   drawQs();
+  $('#clearAll', el).onclick = () => {
+    if (!confirm('調査名・調査目的・テーマ・追加指示・表示タイトル・案内文・質問リストをすべて空にします。\n(資料・言語・チェック項目はそのまま。「保存する」を押すまで保存はされません)\nよろしいですか?')) return;
+    ['title', 'objectives', 'topics', 'instructions', 'publicTitle', 'intro', 'hint'].forEach((id) => { const f = $('#' + id, el); if (f) f.value = ''; });
+    questions = []; drawQs();
+    $('#msg', el).textContent = '✓ 未保存';
+  };
   $('#addq', el).onclick = () => { questions.push({ text: '', followUp: '', quickReplies: '' }); drawQs(); el.querySelectorAll('#qs input[data-f=text]')[questions.length - 1].focus(); };
 
   const drawMats = () => {
     const rows = [...mats.map((m, i) => ({ m, i, kind: 'saved' })), ...pending.map((m, i) => ({ m, i, kind: 'new' }))];
     $('#mats', el).innerHTML = rows.length ? rows.map(({ m, i, kind }) => `<tr>
       <td>${kind === 'saved' && !isNew ? `<a href="#" data-open="${m.id}">${esc(m.name)}</a>` : esc(m.name)}<div class="hint">${(m.size / 1024).toFixed(0)} KB${kind === 'new' ? ' · 未保存' : ''}</div></td>
-      <td><input data-k="${kind}" data-i="${i}" data-f="note" value="${esc(m.note || '')}" placeholder="例: 英語版の茶道紹介パンフ"></td>
+      <td><input data-k="${kind}" data-i="${i}" data-f="note" value="${esc(m.note || '')}" "></td>
       <td><input type="checkbox" data-k="${kind}" data-i="${i}" data-f="showToRespondent" ${m.showToRespondent ? 'checked' : ''}></td>
-      <td><button class="btn small danger" data-rm="${kind}:${i}">削除</button></td></tr>`).join('') : '<tr><td colspan="4" class="hint">まだ資料がありません</td></tr>';
+      <td><button class="btn small danger" data-rm="${kind}:${i}">削除</button></td></tr>`).join('') : '<tr><td colspan="4" class="hint">なし</td></tr>';
     el.querySelectorAll('#mats input').forEach((inp) => inp.onchange = () => {
       const list = inp.dataset.k === 'saved' ? mats : pending;
       list[inp.dataset.i][inp.dataset.f] = inp.type === 'checkbox' ? inp.checked : inp.value;
@@ -251,13 +251,13 @@ function renderSettings(el, s, isNew) {
   if (!isNew) $('#gen', el).onclick = async () => {
     if (!mats.length && !confirm('保存済みの資料がありません。調査名だけから作りますか?')) return;
     if (questions.some((q) => q.text.trim()) && !confirm('今の質問リストをAIの案で置き換えます。よろしいですか?')) return;
-    $('#gen', el).disabled = true; $('#genmsg', el).textContent = 'AIが資料を読んでいます…(30秒ほどかかることがあります)';
+    $('#gen', el).disabled = true; $('#genmsg', el).textContent = '作成中…';
     try {
       const g = await api(`/api/admin/studies/${s.id}/generate`, { method: 'POST', body: JSON.stringify({ hint: $('#hint', el).value }) });
       const cur = collect();
       draft = { ...s, ...cur, materials: mats, objectives: g.objectives, topics: g.topics, publicTitle: g.publicTitle, intro: g.intro, maxQuestions: Math.max(cur.maxQuestions, g.questions.length + 4), questions: g.questions };
       el.innerHTML = ''; renderSettings(el, draft, false);
-      $('#genmsg', el).textContent = '✓ AIの案を入れました。内容を確認して「保存する」を押してください(まだ保存されていません)。';
+      $('#genmsg', el).textContent = '✓ 未保存';
     } catch (e) { $('#genmsg', el).textContent = e.message; $('#gen', el).disabled = false; }
   };
 
@@ -280,7 +280,7 @@ function renderSettings(el, s, isNew) {
 // ---------- 回答一覧・詳細 ----------
 async function renderSessions(el, s, simulated) {
   const list = (await api(`/api/admin/studies/${s.id}/sessions`)).filter((x) => !!x.simulated === simulated);
-  if (!list.length) { el.innerHTML = simulated ? '' : '<div class="empty">まだ回答がありません。上のリンクを回答者に送ってください。</div>'; return; }
+  if (!list.length) { el.innerHTML = simulated ? '' : '<div class="empty">回答なし</div>'; return; }
   el.innerHTML = `<div class="card"><table><thead><tr><th>開始日時</th><th>状態</th><th>言語</th>${simulated ? '<th>ペルソナ</th>' : '<th>国・地域</th><th>年齢</th><th>訪日</th>'}<th>回答数</th><th>反応</th><th>関心度</th>${simulated ? '' : '<th>満足度</th>'}</tr></thead><tbody>
     ${list.map((x) => `<tr class="click" data-id="${x.id}"><td>${new Date(x.startedAt).toLocaleString('ja-JP')}</td>
       <td><span class="pill ${x.status}">${x.status === 'completed' ? '完了' : '回答中/中断'}</span></td><td>${esc(x.languageName)}</td>
@@ -292,7 +292,7 @@ async function renderSessions(el, s, simulated) {
 }
 
 function reportHtml(r) {
-  if (!r) return '<p class="hint">レポートはまだありません(インタビュー完了時に自動で作られます)。</p>';
+  if (!r) return '<p class="hint">なし</p>';
   return `<div class="rep-grid">
       <div class="kpi"><div class="l">反応</div><div class="v" style="font-size:18px"><span class="pill ${r.sentiment}" style="font-size:14px">${SENT[r.sentiment] || r.sentiment}</span></div></div>
       <div class="kpi"><div class="l">関心度</div><div class="v" style="font-size:18px">${'★'.repeat(r.interest_score || 0)}${'☆'.repeat(5 - (r.interest_score || 0))}</div></div>
@@ -332,17 +332,17 @@ async function renderStats(el, s) {
   el.innerHTML = `
     <div class="kpis">
       <div class="kpi"><div class="v">${st.total}</div><div class="l">回答者数</div></div>
-      <div class="kpi"><div class="v">${st.completionRate}%</div><div class="l">完了率 (${st.completed}件)</div></div>
+      <div class="kpi"><div class="v">${st.completionRate}%</div><div class="l">完了率</div></div>
       <div class="kpi"><div class="v">${st.avgAnswers ?? '-'}</div><div class="l">平均回答数</div></div>
-      <div class="kpi"><div class="v">${st.avgInterest ?? '-'}</div><div class="l">平均関心度 (5点満点)</div></div>
-      <div class="kpi"><div class="v">${st.avgRating ?? '-'}</div><div class="l">回答者の満足度 (${st.ratingCount}件)</div></div>
+      <div class="kpi"><div class="v">${st.avgInterest ?? '-'}</div><div class="l">関心度</div></div>
+      <div class="kpi"><div class="v">${st.avgRating ?? '-'}</div><div class="l">満足度</div></div>
     </div>
-    <div class="card"><h3>回答の全文検索</h3>
-      <div class="row"><input id="q" placeholder="キーワード(原文・日本語訳のどちらでも) 例: 値段, price, 作法" style="flex:1"><label class="check"><input type="checkbox" id="sim">模擬回答も含める</label><button class="btn primary" id="go">検索</button></div>
+    <div class="card">
+      <div class="row"><input id="q" placeholder="🔍 検索" style="flex:1"><label class="check"><input type="checkbox" id="sim">模擬も</label><button class="btn primary" id="go">検索</button></div>
       <div id="hits"></div></div>
-    <div class="bars">${bars('反応の分布(AI判定)', st.bySentiment)}${bars('言語', st.byLanguage)}${bars('国・地域', st.byCountry)}${bars('年齢', st.byAge)}${bars('訪日経験', st.byVisited)}${bars('回答者タイプ(AI判定)', st.byType)}</div>
-    ${st.questionReach.length ? `<div class="card"><h3>質問リストの到達状況</h3><p class="hint" style="margin-top:0">途中で離脱が多い質問は、聞き方や順番を見直す目安になります。</p>${st.questionReach.map((q, i) => `<div class="bar" style="grid-template-columns: 1fr 160px 36px"><span class="lab">Q${i + 1}. ${esc(q.text)}</span><div class="track"><div class="fill" style="width:${st.total ? (q.reached / st.total) * 100 : 0}%"></div></div><span>${q.reached}</span></div>`).join('')}</div>` : ''}
-    ${st.simulatedCount ? `<p class="hint">※ 模擬回答 ${st.simulatedCount}件は統計に含めていません。</p>` : ''}<div id="detail"></div>`;
+    <div class="bars">${bars('反応', st.bySentiment)}${bars('言語', st.byLanguage)}${bars('国・地域', st.byCountry)}${bars('年齢', st.byAge)}${bars('訪日経験', st.byVisited)}${bars('タイプ', st.byType)}</div>
+    ${st.questionReach.length ? `<div class="card"><h3>質問の到達数</h3>${st.questionReach.map((q, i) => `<div class="bar" style="grid-template-columns: 1fr 160px 36px"><span class="lab">Q${i + 1}. ${esc(q.text)}</span><div class="track"><div class="fill" style="width:${st.total ? (q.reached / st.total) * 100 : 0}%"></div></div><span>${q.reached}</span></div>`).join('')}</div>` : ''}
+    ${st.simulatedCount ? `<p class="hint">模擬 ${st.simulatedCount}件は除外</p>` : ''}<div id="detail"></div>`;
   const search = async () => {
     const q = $('#q', el).value.trim(); if (!q) return;
     const hits = await api(`/api/admin/studies/${s.id}/search?q=${encodeURIComponent(q)}&sim=${$('#sim', el).checked ? 1 : 0}`);
@@ -358,16 +358,14 @@ async function renderStats(el, s) {
 // ---------- 全体分析・書き出し ----------
 async function renderAnalysis(el, s) {
   const full = await api(`/api/admin/studies/${s.id}`);
-  el.innerHTML = `<div class="card"><h3>AI全体分析</h3>
-    <p class="hint" style="margin-top:0">模擬回答を除くすべての回答をGeminiが横断的に読み、反応のパターン・国による違い・障壁・マーケティングへの示唆を日本語でまとめます。</p>
+  el.innerHTML = `<div class="card"><h3>AI分析</h3>
     <div class="row"><button class="btn primary" id="run">${full.analysis ? '分析し直す' : '分析する'}</button><span class="small" id="st">${full.analysis ? '前回の分析: ' + new Date(full.analysis.at).toLocaleString('ja-JP') : ''}</span></div>
     ${full.analysis ? `<div class="report" style="margin-top:14px">${esc(full.analysis.text)}</div>` : ''}</div>
-    <div class="card"><h3>データの書き出し</h3><div class="row">
-      <button class="btn" data-x="export.csv?kind=messages" data-n="messages.csv">CSV: 全発言(原文と日本語訳)</button>
-      <button class="btn" data-x="export.csv?kind=summary" data-n="summary.csv">CSV: 回答者ごとのレポート一覧</button>
-      <button class="btn" data-x="export.json" data-n="all.json">JSON: 全データ</button></div>
-      <div class="hint">CSVはExcelでそのまま開けます。模擬回答は simulated 列で見分けられます。</div></div>`;
-  $('#run', el).onclick = async () => { $('#run', el).disabled = true; $('#st', el).textContent = '分析中…(回答数によっては1分ほどかかります)'; try { await api(`/api/admin/studies/${s.id}/analyze`, { method: 'POST' }); renderAnalysis(el, s); } catch (e) { $('#st', el).textContent = e.message; $('#run', el).disabled = false; } };
+    <div class="card"><h3>書き出し</h3><div class="row">
+      <button class="btn" data-x="export.csv?kind=messages" data-n="messages.csv">全発言 CSV</button>
+      <button class="btn" data-x="export.csv?kind=summary" data-n="summary.csv">レポート CSV</button>
+      <button class="btn" data-x="export.json" data-n="all.json">JSON</button></div></div>`;
+  $('#run', el).onclick = async () => { $('#run', el).disabled = true; $('#st', el).textContent = '分析中…'; try { await api(`/api/admin/studies/${s.id}/analyze`, { method: 'POST' }); renderAnalysis(el, s); } catch (e) { $('#st', el).textContent = e.message; $('#run', el).disabled = false; } };
   el.querySelectorAll('[data-x]').forEach((b) => b.onclick = () => download(`/api/admin/studies/${s.id}/${b.dataset.x}`, `interview-${s.id}-${b.dataset.n}`));
 }
 
@@ -379,17 +377,16 @@ const PERSONAS = [
   '日本文化に特に関心がないドイツ人の50代男性。観光は効率重視で、説明が長いと退屈する。',
 ];
 function renderTest(el, s) {
-  el.innerHTML = `<div class="card"><h3>AI模擬回答者でテストする</h3>
-    <p class="hint" style="margin-top:0">本番の前に、AIが演じる架空の回答者にインタビューを最後まで受けさせて、質問の流れや深掘りの仕方を確認できます。模擬回答は統計と全体分析には含まれません。</p>
-    <div class="field"><label>ペルソナ(回答者の設定)</label><textarea id="persona" rows="2">${esc(PERSONAS[0])}</textarea>
+  el.innerHTML = `<div class="card"><h3>AI模擬回答</h3>
+    <div class="field"><label>ペルソナ</label><textarea id="persona" rows="2">${esc(PERSONAS[0])}</textarea>
       <div class="row" style="margin-top:6px">${PERSONAS.map((p, i) => `<button class="btn small" data-p="${i}">例${i + 1}</button>`).join('')}</div></div>
-    <div class="field" style="max-width:260px"><label>回答の言語</label><select id="plang">${Object.entries(LANGS).map(([k, v]) => `<option value="${k}" ${k === 'en' ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
-    <div class="row"><button class="btn primary" id="sim">テストを実行</button><span class="small" id="simmsg"></span></div></div>
+    <div class="field" style="max-width:260px"><label>言語</label><select id="plang">${Object.entries(LANGS).map(([k, v]) => `<option value="${k}" ${k === 'en' ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
+    <div class="row"><button class="btn primary" id="sim">実行</button><span class="small" id="simmsg"></span></div></div>
     <div id="simlist"></div>`;
   el.querySelectorAll('[data-p]').forEach((b) => b.onclick = () => { $('#persona', el).value = PERSONAS[b.dataset.p]; });
   $('#sim', el).onclick = async () => {
-    $('#sim', el).disabled = true; $('#simmsg', el).textContent = 'AI同士でインタビュー中…(1〜2分かかります)';
-    try { await api(`/api/admin/studies/${s.id}/simulate`, { method: 'POST', body: JSON.stringify({ persona: $('#persona', el).value, language: $('#plang', el).value }) }); $('#simmsg', el).textContent = '✓ 完了しました。下の一覧から確認できます。'; await refresh(); }
+    $('#sim', el).disabled = true; $('#simmsg', el).textContent = '実行中…';
+    try { await api(`/api/admin/studies/${s.id}/simulate`, { method: 'POST', body: JSON.stringify({ persona: $('#persona', el).value, language: $('#plang', el).value }) }); $('#simmsg', el).textContent = '✓ 完了'; await refresh(); }
     catch (e) { $('#simmsg', el).textContent = e.message; }
     $('#sim', el).disabled = false; renderSessions($('#simlist', el), s, true);
   };
