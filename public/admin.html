@@ -130,6 +130,7 @@ function render() {
   const main = $('#main');
   const banners = [];
   if (status.mock) banners.push('GEMINI_API_KEY が設定されていないため、<b>デモモード</b>(AIの代わりに決まった文章を返す)で動いています。.env に GEMINI_API_KEY を設定してサーバーを再起動してください。');
+  if (!status.cloud) banners.push('回答データはこのサーバーのフォルダにだけ保存されています。Renderの無料プランでは再起動で消えるため、公開するときは SUPABASE_URL と SUPABASE_SECRET_KEY を設定してください(README参照)。');
   if (status.defaultPassword) banners.push('管理者パスワードが初期値 (admin) のままです。公開する前に .env の ADMIN_PASSWORD を変更してください。');
   main.innerHTML = banners.map((b) => `<div class="banner">${b}</div>`).join('');
   if (current === 'new') {

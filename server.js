@@ -7,6 +7,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 loadDotEnv(path.join(__dirname, '.env'));
+const cloud = require('./cloud');
 
 const PORT = Number(process.env.PORT || 3000);
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
@@ -39,9 +40,13 @@ function readJson(file, fallback = null) {
 function writeJson(file, obj) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const tmp = file + '.' + process.pid + '.' + newId(3) + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify(obj, null, 2));
+  const text = JSON.stringify(obj, null, 2);
+  fs.writeFileSync(tmp, text);
   fs.renameSync(tmp, file);
+  cloud.put(relPath(file), Buffer.from(text), false);
 }
+const relPath = (file) => path.relative(DATA_DIR, file).split(path.sep).join('/');
+function removeFile(file) { fs.rmSync(file, { force: true }); cloud.remove(relPath(file)); }
 const studyPath = (id) => path.join(DATA_DIR, 'studies', id + '.json');
 const sessionPath = (studyId, sid) => path.join(DATA_DIR, 'sessions', studyId, sid + '.json');
 const getStudy = (id) => (safeId(id) ? readJson(studyPath(id)) : null);
@@ -496,7 +501,7 @@ async function handle(req, res) {
     }
     if (!isAdmin(req)) return send(res, 401, { error: 'ログインしてください' });
 
-    if (seg[2] === 'status') return send(res, 200, { mock: MOCK_AI, model: GEMINI_MODEL, defaultPassword: ADMIN_PASSWORD === 'admin', usageToday: usageToday(), dailyLimit: DAILY_AI_CALL_LIMIT });
+    if (seg[2] === 'status') return send(res, 200, { mock: MOCK_AI, model: GEMINI_MODEL, defaultPassword: ADMIN_PASSWORD === 'admin', usageToday: usageToday(), dailyLimit: DAILY_AI_CALL_LIMIT, cloud: cloud.enabled });
     if (seg[2] === 'studies' && !seg[3]) {
       if (req.method === 'GET') return send(res, 200, listStudies().map((s) => ({ ...s, sessionCount: listSessions(s.id).filter((x) => !x.simulated).length })));
       if (req.method === 'POST') {
@@ -526,7 +531,7 @@ async function handle(req, res) {
           return send(res, 200, study);
         }
         if (req.method === 'DELETE') {
-          fs.rmSync(studyPath(study.id), { force: true });
+          removeFile(studyPath(study.id));
           return send(res, 200, { ok: true });
         }
       }
@@ -553,7 +558,7 @@ async function handle(req, res) {
       if (seg[4] === 'sessions' && seg[5]) {
         const s = safeId(seg[5]) ? readJson(sessionPath(study.id, seg[5])) : null;
         if (!s) return send(res, 404, { error: 'not found' });
-        if (req.method === 'DELETE') { fs.rmSync(sessionPath(study.id, s.id), { force: true }); return send(res, 200, { ok: true }); }
+        if (req.method === 'DELETE') { removeFile(sessionPath(study.id, s.id)); return send(res, 200, { ok: true }); }
         if (req.method === 'POST' && seg[6] === 'report') { s.report = await buildReport(study, s); saveSession(s); return send(res, 200, s.report); }
         delete s.token; return send(res, 200, s);
       }
@@ -604,6 +609,7 @@ function addMaterials(study, list) {
     const fileId = newId(12);
     const buf = Buffer.from(String(f.data), 'base64');
     fs.writeFileSync(path.join(DATA_DIR, 'files', fileId), buf);
+    cloud.put(`files/${fileId}`, buf, true);
     study.materials.push({ id: newId(4), fileId, name: String(f.name || 'file').slice(0, 200), mimeType: String(f.mimeType || 'application/octet-stream'), size: buf.length, note: String(f.note || ''), showToRespondent: !!f.showToRespondent, uploadedAt: now() });
   }
 }
@@ -627,13 +633,24 @@ function exportCsv(study, kind) {
   return rows.map((r) => r.map(esc).join(',')).join('\r\n');
 }
 
-http.createServer((req, res) => {
+const server = http.createServer((req, res) => {
   handle(req, res).catch((e) => {
     console.error(e);
     if (!res.headersSent) send(res, e.status || 500, { error: e.message || 'サーバーエラー' });
   });
-}).listen(PORT, () => {
+});
+
+(async () => {
+  if (cloud.enabled) {
+    const n = await cloud.restore(DATA_DIR);
+    console.log(`Supabase から ${n} 件のデータを復元しました`);
+  }
+  server.listen(PORT, () => {
   console.log(`\nAIインタビューツール起動: http://localhost:${PORT}/admin`);
+  console.log(cloud.enabled ? 'データ保存先: Supabase(+ローカル)' : `データ保存先: ${DATA_DIR}(ローカルのみ)`);
   console.log(MOCK_AI ? '⚠ GEMINI_API_KEY 未設定のため デモモード(AIなし)で動いています' : `Gemini モデル: ${GEMINI_MODEL}`);
   if (ADMIN_PASSWORD === 'admin') console.log('⚠ 管理者パスワードが初期値(admin)です。ADMIN_PASSWORD を設定してください');
-});
+  });
+})().catch((e) => { console.error('起動に失敗しました:', e.message); process.exit(1); });
+
+for (const sig of ['SIGTERM', 'SIGINT']) process.on(sig, async () => { server.close(); await cloud.flush(); process.exit(0); });

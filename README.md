@@ -38,14 +38,23 @@
 APIキーはサーバーだけが持ち、回答者のブラウザには送られません。
 APIキーなしで起動すると「デモモード」(AIの代わりに決まった文章を返す)になり、画面の動きだけ確認できます。
 
-## 海外の回答者に使ってもらうには(インターネットに公開)
+## 無料で公開する(Render + Supabase + Gemini 無料枠)
 
-自分のPCで動かしているだけだと、回答者はアクセスできません。次のどれかで公開します。
+すべて無料プランで動きます。クレジットカードは不要です(2026年11月時点の各サービスの無料枠)。
 
-- **すぐ試す**: 自分のPCで起動したまま `npx cloudflared tunnel --url http://localhost:3000` を実行すると、一時的な公開URLが出ます
-- **本番運用**: Render / Railway / Google Cloud Run などにこのフォルダをデプロイし、環境変数に `GEMINI_API_KEY` と `ADMIN_PASSWORD` を設定。回答データは `data/` フォルダに保存されるので、永続ディスク(Render の Disk など)を `DATA_DIR` に指定してください
+1. **Gemini APIキー**: https://aistudio.google.com/apikey で「Create API key」
+2. **Supabase**(データ保存用): https://supabase.com で無料プロジェクトを作成 → 左メニュー「SQL Editor」に `supabase.sql` の中身を貼って「Run」 → 「Project Settings → API Keys」で Project URL と secret key をコピー
+3. **Render**(公開用): https://dashboard.render.com/blueprints → 「New Blueprint Instance」でこのリポジトリを選び、`GEMINI_API_KEY` `ADMIN_PASSWORD` `SUPABASE_URL` `SUPABASE_SECRET_KEY` を入力して「Apply」
+
+数分で `https://ai-interview-xxxx.onrender.com` が発行されます。`/admin` が管理者画面です。
+
+### 無料プランの注意
+- **Render無料プラン**: 15分アクセスがないと休止し、次に開くとき30〜60秒ほど待ちます。回答者にリンクを送る前に、一度自分で開いて起こしておくと安心です。再起動してもデータはSupabaseから復元されます
+- **Supabase無料プラン**: 1週間アクセスがないとプロジェクトが一時停止します(データは消えず、ダッシュボードから再開できます)。容量は500MBまで
+- **Gemini無料枠**: 1分あたり・1日あたりの回数制限があります。上限に当たると回答者側にエラーが出るので、大人数に一斉配信するときは有料枠への切り替えか、`GEMINI_MODEL=gemini-2.5-flash-lite`(無料枠の回数が多め)を検討してください。また、無料枠では入力内容がGoogleのサービス改善に使われることがあるため、回答者向け案内文でその旨を伝えるのが安全です
 
 ## データの保存場所
+`SUPABASE_URL` と `SUPABASE_SECRET_KEY` を設定すると、下のファイルが Supabase の `app_files` テーブルにも保存され、起動時に復元されます。設定しなければローカルのみです。
 - `data/studies/` 調査の設定
 - `data/files/` アップロードした資料
 - `data/sessions/<調査ID>/` 回答(原文・日本語訳・AI要約)
