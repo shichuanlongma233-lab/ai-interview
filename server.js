@@ -93,16 +93,11 @@ function readBody(req) {
 }
 
 // ---------- 管理者認証 (メモリ上のトークン) ----------
-// トークンは「有効期限 + パスワードから作った署名」。サーバーが再起動(Render無料プランの休止)しても有効なまま
-const TOKEN_DAYS = 30;
-const sign = (exp) => crypto.createHmac('sha256', 'admin-token:' + ADMIN_PASSWORD).update(String(exp)).digest('base64url');
-const makeToken = () => { const exp = Date.now() + TOKEN_DAYS * 864e5; return `${exp}.${sign(exp)}`; };
+const adminTokens = new Map(); // token -> expires
 function isAdmin(req) {
   const t = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-  const [exp, sig] = t.split('.');
-  if (!exp || !sig || Number(exp) < Date.now()) return false;
-  const a = Buffer.from(sig), b = Buffer.from(sign(exp));
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
+  const exp = adminTokens.get(t);
+  return !!exp && exp > Date.now();
 }
 function passwordOk(p) {
   const a = Buffer.from(String(p || '')); const b = Buffer.from(ADMIN_PASSWORD);
@@ -509,7 +504,8 @@ async function handle(req, res) {
     if (seg[2] === 'login' && req.method === 'POST') {
       const b = await readBody(req);
       if (!passwordOk(b.password)) return send(res, 401, { error: 'パスワードが違います' });
-      return send(res, 200, { token: makeToken() });
+      const token = newId(24); adminTokens.set(token, Date.now() + 12 * 3600e3);
+      return send(res, 200, { token });
     }
     if (!isAdmin(req)) return send(res, 401, { error: 'ログインしてください' });
 
