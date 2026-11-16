@@ -1,0 +1,10 @@
+{
+  "name": "ai-interview",
+  "version": "1.0.0",
+  "description": "Gemini APIを使った多言語AIインタビューツール (管理者画面・回答者画面)",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "demo": "MOCK_AI=1 node server.js" },
+  "engines": { "node": ">=18" },
+  "license": "UNLICENSED",
+  "private": true
+}

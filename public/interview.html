@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Interview</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>
+  body { background: var(--paper); }
+  .wrap { max-width: 720px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; }
+  header.top { padding: 14px 18px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 10px; background: var(--card); position: sticky; top: 0; z-index: 2; }
+  header.top h1 { font-size: 16px; margin: 0; flex: 1; }
+  .progress { font-size: 12px; color: var(--muted); }
+  .intro { padding: 28px 20px; }
+  .intro h2 { font-size: 22px; margin: 0 0 8px; }
+  .intro p { color: var(--muted); line-height: 1.7; white-space: pre-wrap; }
+  .field { margin: 16px 0; }
+  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .langs { display: flex; flex-wrap: wrap; gap: 8px; }
+  .langs button { border: 1px solid var(--line); background: var(--card); border-radius: 999px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
+  .langs button.on { background: var(--ai); color: #fff; border-color: var(--ai); }
+  .chat { flex: 1; padding: 18px 14px 8px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 85%; padding: 12px 14px; border-radius: 16px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; font-size: 15px; }
+  .msg.ai { align-self: flex-start; background: var(--card); border: 1px solid var(--line); border-top-left-radius: 4px; }
+  .msg.user { align-self: flex-end; background: var(--ai); color: #fff; border-top-right-radius: 4px; }
+  .material { align-self: flex-start; max-width: 85%; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--card); }
+  .material img { display: block; max-width: 100%; max-height: 360px; }
+  .material a { display: block; padding: 10px 14px; font-size: 14px; }
+  .typing { align-self: flex-start; color: var(--muted); font-size: 13px; padding: 4px 8px; }
+  .typing span { animation: blink 1.2s infinite; }
+  .typing span:nth-child(2) { animation-delay: .2s } .typing span:nth-child(3) { animation-delay: .4s }
+  @keyframes blink { 0%,80%,100% { opacity: .2 } 40% { opacity: 1 } }
+  .composer { position: sticky; bottom: 0; background: var(--card); border-top: 1px solid var(--line); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
+  .row { display: flex; gap: 8px; align-items: flex-end; }
+  .row textarea { flex: 1; resize: none; min-height: 44px; max-height: 160px; }
+  .iconbtn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); cursor: pointer; font-size: 18px; flex: none; }
+  .iconbtn.rec { background: #c0392b; color: #fff; border-color: #c0392b; }
+  .sub { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: var(--muted); }
+  .sub button { background: none; border: none; color: var(--muted); text-decoration: underline; cursor: pointer; font-size: 12px; }
+  .quick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .quick button { border: 1px solid var(--ai); color: var(--ai); background: #fff; border-radius: 999px; padding: 7px 12px; font-size: 14px; cursor: pointer; }
+  .quick button:hover { background: #eef1f8; }
+  .rating { text-align: center; padding: 8px 20px 28px; }
+  .stars { display: flex; justify-content: center; gap: 6px; margin: 10px 0; }
+  .stars button { font-size: 30px; background: none; border: 0; cursor: pointer; color: #ccc; padding: 0 2px; }
+  .stars button.on { color: #e0a800; }
+  .done { text-align: center; padding: 28px 20px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"><div class="intro">Loading…</div></div>
+<script>
+const UI = {
+  en: { start: 'Start interview', lang: 'Language', country: 'Country / region you live in', age: 'Age', gender: 'Gender', visited: 'Have you been to Japan?', optional: '(optional)', consent: 'Your answers are anonymous and used only for research. Please do not enter your name or contact details.', ph: 'Type your answer…', send: 'Send', end: 'End interview', confirmEnd: 'End the interview now?', thanks: 'Thank you! Your interview is complete. You can close this page.', closed: 'This interview is currently closed.', err: 'Something went wrong. Please try again.', q: 'Question', yes: 'Yes', no: 'No', many: 'Several times', sel: 'Select', male: 'Male', female: 'Female', other: 'Other / prefer not to say', notfound: 'Interview not found.', mic: 'Voice input', rateQ: 'How was this interview?', rateC: 'Any comments? (optional)', rateSend: 'Send', rateThanks: 'Thank you for your feedback!' },
+  ja: { start: 'インタビューを始める', lang: '言語', country: 'お住まいの国・地域', age: '年齢', gender: '性別', visited: '日本に行ったことはありますか?', optional: '(任意)', consent: '回答は匿名で、調査目的にのみ使用します。お名前や連絡先は入力しないでください。', ph: '回答を入力…', send: '送信', end: 'インタビューを終える', confirmEnd: 'インタビューを終了しますか?', thanks: 'ありがとうございました。インタビューは終了です。このページを閉じてください。', closed: 'このインタビューは現在受付を終了しています。', err: 'エラーが発生しました。もう一度お試しください。', q: '質問', yes: 'はい', no: 'いいえ', many: '何度もある', sel: '選択', male: '男性', female: '女性', other: 'その他・回答しない', notfound: 'インタビューが見つかりません。', mic: '音声入力', rateQ: 'このインタビューはいかがでしたか?', rateC: 'ご意見があれば(任意)', rateSend: '送信', rateThanks: 'ご意見ありがとうございました!' },
+  'zh-CN': { start: '开始访谈', lang: '语言', country: '居住国家/地区', age: '年龄', gender: '性别', visited: '您去过日本吗?', optional: '(可选)', consent: '您的回答是匿名的,仅用于研究。请勿输入姓名或联系方式。', ph: '请输入您的回答…', send: '发送', end: '结束访谈', confirmEnd: '现在结束访谈吗?', thanks: '谢谢!访谈已完成,您可以关闭此页面。', closed: '此访谈目前已关闭。', err: '出现错误,请重试。', q: '问题', yes: '是', no: '否', many: '去过多次', sel: '请选择', male: '男', female: '女', other: '其他/不愿透露', notfound: '找不到访谈。', mic: '语音输入', rateQ: '您对这次访谈满意吗?', rateC: '其他意见(可选)', rateSend: '提交', rateThanks: '感谢您的反馈!' },
+  'zh-TW': { start: '開始訪談', lang: '語言', country: '居住國家/地區', age: '年齡', gender: '性別', visited: '您去過日本嗎?', optional: '(選填)', consent: '您的回答為匿名,僅用於研究。請勿輸入姓名或聯絡方式。', ph: '請輸入您的回答…', send: '送出', end: '結束訪談', confirmEnd: '現在結束訪談嗎?', thanks: '謝謝!訪談已完成,您可以關閉此頁面。', closed: '此訪談目前已關閉。', err: '發生錯誤,請再試一次。', q: '問題', yes: '是', no: '否', many: '去過多次', sel: '請選擇', male: '男', female: '女', other: '其他/不願透露', notfound: '找不到訪談。', mic: '語音輸入', rateQ: '您對這次訪談滿意嗎?', rateC: '其他意見(選填)', rateSend: '送出', rateThanks: '感謝您的回饋!' },
+  ko: { start: '인터뷰 시작', lang: '언어', country: '거주 국가/지역', age: '나이', gender: '성별', visited: '일본에 가 본 적이 있나요?', optional: '(선택)', consent: '답변은 익명으로 연구 목적으로만 사용됩니다. 이름이나 연락처는 입력하지 마세요.', ph: '답변을 입력하세요…', send: '보내기', end: '인터뷰 종료', confirmEnd: '지금 인터뷰를 종료할까요?', thanks: '감사합니다! 인터뷰가 끝났습니다. 이 페이지를 닫으셔도 됩니다.', closed: '이 인터뷰는 현재 마감되었습니다.', err: '오류가 발생했습니다. 다시 시도해 주세요.', q: '질문', yes: '예', no: '아니요', many: '여러 번', sel: '선택', male: '남성', female: '여성', other: '기타/응답 안 함', notfound: '인터뷰를 찾을 수 없습니다.', mic: '음성 입력', rateQ: '이번 인터뷰는 어떠셨나요?', rateC: '의견이 있으면 적어 주세요(선택)', rateSend: '보내기', rateThanks: '의견 감사합니다!' },
+  es: { start: 'Comenzar la entrevista', lang: 'Idioma', country: 'País / región donde vive', age: 'Edad', gender: 'Género', visited: '¿Ha estado en Japón?', optional: '(opcional)', consent: 'Sus respuestas son anónimas y solo se usan para investigación. No escriba su nombre ni datos de contacto.', ph: 'Escriba su respuesta…', send: 'Enviar', end: 'Terminar entrevista', confirmEnd: '¿Terminar la entrevista ahora?', thanks: '¡Gracias! La entrevista ha terminado. Puede cerrar esta página.', closed: 'Esta entrevista está cerrada.', err: 'Algo salió mal. Inténtelo de nuevo.', q: 'Pregunta', yes: 'Sí', no: 'No', many: 'Varias veces', sel: 'Seleccionar', male: 'Hombre', female: 'Mujer', other: 'Otro / prefiero no decirlo', notfound: 'Entrevista no encontrada.', mic: 'Entrada de voz', rateQ: '¿Qué le pareció esta entrevista?', rateC: '¿Algún comentario? (opcional)', rateSend: 'Enviar', rateThanks: '¡Gracias por su opinión!' },
+  fr: { start: "Commencer l'entretien", lang: 'Langue', country: 'Pays / région de résidence', age: 'Âge', gender: 'Genre', visited: 'Êtes-vous déjà allé(e) au Japon ?', optional: '(facultatif)', consent: 'Vos réponses sont anonymes et utilisées uniquement à des fins de recherche. N’indiquez pas votre nom ni vos coordonnées.', ph: 'Écrivez votre réponse…', send: 'Envoyer', end: "Terminer l'entretien", confirmEnd: "Terminer l'entretien maintenant ?", thanks: "Merci ! L'entretien est terminé. Vous pouvez fermer cette page.", closed: 'Cet entretien est fermé.', err: 'Une erreur est survenue. Veuillez réessayer.', q: 'Question', yes: 'Oui', no: 'Non', many: 'Plusieurs fois', sel: 'Choisir', male: 'Homme', female: 'Femme', other: 'Autre / ne souhaite pas répondre', notfound: 'Entretien introuvable.', mic: 'Saisie vocale', rateQ: 'Comment avez-vous trouvé cet entretien ?', rateC: 'Un commentaire ? (facultatif)', rateSend: 'Envoyer', rateThanks: 'Merci pour votre avis !' },
+  de: { start: 'Interview starten', lang: 'Sprache', country: 'Wohnland / Region', age: 'Alter', gender: 'Geschlecht', visited: 'Waren Sie schon einmal in Japan?', optional: '(optional)', consent: 'Ihre Antworten sind anonym und werden nur für Forschungszwecke verwendet. Bitte geben Sie keinen Namen oder Kontaktdaten ein.', ph: 'Ihre Antwort…', send: 'Senden', end: 'Interview beenden', confirmEnd: 'Interview jetzt beenden?', thanks: 'Vielen Dank! Das Interview ist beendet. Sie können diese Seite schließen.', closed: 'Dieses Interview ist geschlossen.', err: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.', q: 'Frage', yes: 'Ja', no: 'Nein', many: 'Mehrmals', sel: 'Auswählen', male: 'Männlich', female: 'Weiblich', other: 'Divers / keine Angabe', notfound: 'Interview nicht gefunden.', mic: 'Spracheingabe', rateQ: 'Wie fanden Sie dieses Interview?', rateC: 'Anmerkungen? (optional)', rateSend: 'Senden', rateThanks: 'Danke für Ihr Feedback!' },
+};
+const SPEECH_LANG = { en: 'en-US', ja: 'ja-JP', 'zh-CN': 'zh-CN', 'zh-TW': 'zh-TW', ko: 'ko-KR', es: 'es-ES', fr: 'fr-FR', de: 'de-DE', it: 'it-IT', pt: 'pt-BR', ru: 'ru-RU', ar: 'ar-SA', hi: 'hi-IN', th: 'th-TH', vi: 'vi-VN', id: 'id-ID', ms: 'ms-MY', tl: 'fil-PH', tr: 'tr-TR', pl: 'pl-PL', nl: 'nl-NL', sv: 'sv-SE' };
+
+const studyId = location.pathname.split('/').filter(Boolean)[1];
+const app = document.getElementById('app');
+const store = `interview:${studyId}`;
+let study, LANGS, lang, session, token, busy = false;
+const t = (k) => (UI[lang] || UI.en)[k] || UI.en[k];
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', ...(token ? { 'X-Session-Token': token } : {}), ...(opts.headers || {}) } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+
+function guessLang(list) {
+  for (const l of navigator.languages || [navigator.language]) {
+    const full = list.find((x) => x.toLowerCase() === l.toLowerCase());
+    if (full) return full;
+    if (/^zh/i.test(l)) { const z = /TW|HK|Hant/i.test(l) ? 'zh-TW' : 'zh-CN'; if (list.includes(z)) return z; }
+    const short = list.find((x) => x.split('-')[0] === l.split('-')[0]);
+    if (short) return short;
+  }
+  return list.includes('en') ? 'en' : list[0];
+}
+
+async function init() {
+  try {
+    [study, LANGS] = await Promise.all([api(`/api/public/studies/${studyId}`), api('/api/languages')]);
+  } catch { app.innerHTML = `<div class="done">${UI.en.notfound}</div>`; return; }
+  document.title = study.title;
+  const saved = JSON.parse(localStorage.getItem(store) || 'null');
+  if (saved?.token) {
+    token = saved.token;
+    try { session = await api(`/api/public/sessions/${saved.id}`); lang = session.language; return renderChat(); }
+    catch { localStorage.removeItem(store); token = null; }
+  }
+  if (!study.active) { lang = guessLang(Object.keys(UI)); app.innerHTML = `<div class="done">${t('closed')}</div>`; return; }
+  const list = study.languages?.length ? study.languages : Object.keys(LANGS);
+  lang = guessLang(list);
+  renderIntro(list);
+}
+
+function renderIntro(list) {
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  const ages = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+'];
+  app.innerHTML = `
+  <div class="intro">
+    <h2>${esc(study.title)}</h2>
+    ${study.intro ? `<p>${esc(study.intro)}</p>` : ''}
+    <div class="field"><label>${t('lang')}</label>
+      <div class="langs">${list.map((l) => `<button data-l="${l}" class="${l === lang ? 'on' : ''}">${esc(LANGS[l])}</button>`).join('')}</div></div>
+    ${study.askProfile ? `
+    <div class="field"><label>${t('country')} ${t('optional')}</label><input id="country" maxlength="80"></div>
+    <div class="grid2">
+      <div class="field"><label>${t('age')} ${t('optional')}</label><select id="age"><option value="">${t('sel')}</option>${ages.map((a) => `<option>${a}</option>`).join('')}</select></div>
+      <div class="field"><label>${t('gender')} ${t('optional')}</label><select id="gender"><option value="">${t('sel')}</option><option value="male">${t('male')}</option><option value="female">${t('female')}</option><option value="other">${t('other')}</option></select></div>
+    </div>
+    <div class="field"><label>${t('visited')} ${t('optional')}</label><select id="visited"><option value="">${t('sel')}</option><option value="no">${t('no')}</option><option value="yes">${t('yes')}</option><option value="many">${t('many')}</option></select></div>` : ''}
+    <p class="small">${t('consent')}</p>
+    <button class="btn primary big" id="start">${t('start')}</button>
+  </div>`;
+  app.querySelectorAll('.langs button').forEach((b) => b.onclick = () => {
+    const keep = readProfile(); lang = b.dataset.l; renderIntro(list); writeProfile(keep);
+  });
+  app.querySelector('#start').onclick = start;
+}
+const readProfile = () => Object.fromEntries(['country', 'age', 'gender', 'visited'].map((k) => [k, document.getElementById(k)?.value || '']));
+const writeProfile = (p) => Object.entries(p).forEach(([k, v]) => { const el = document.getElementById(k); if (el) el.value = v; });
+
+async function start() {
+  const btn = app.querySelector('#start'); btn.disabled = true; btn.textContent = '…';
+  const p = readProfile();
+  try {
+    session = await api(`/api/public/studies/${studyId}/sessions`, { method: 'POST', body: JSON.stringify({ language: lang, profile: { country: p.country, age: p.age, gender: p.gender, visitedJapan: p.visited } }) });
+    token = session.token;
+    localStorage.setItem(store, JSON.stringify({ id: session.id, token }));
+    renderChat();
+  } catch (e) { alert(e.message || t('err')); btn.disabled = false; btn.textContent = t('start'); }
+}
+
+function renderChat() {
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  app.innerHTML = `
+    <header class="top"><h1>${esc(study.title)}</h1><span class="progress" id="prog"></span></header>
+    <div class="chat" id="chat"></div>
+    <div class="composer" id="composer">
+      <div class="quick" id="quick"></div>
+      <div class="row">
+        <textarea id="input" rows="1" placeholder="${t('ph')}"></textarea>
+        <button class="iconbtn" id="mic" title="${t('mic')}" hidden>🎤</button>
+        <button class="btn primary" id="send">${t('send')}</button>
+      </div>
+      <div class="sub"><span></span><button id="end">${t('end')}</button></div>
+    </div>`;
+  const input = app.querySelector('#input');
+  input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 160) + 'px'; });
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && window.matchMedia('(pointer:fine)').matches) { e.preventDefault(); answer(); } });
+  app.querySelector('#send').onclick = () => answer();
+  app.querySelector('#end').onclick = () => { if (confirm(t('confirmEnd'))) answer(true); };
+  setupMic(input);
+  drawMessages();
+}
+
+function drawMessages(typing = false) {
+  const chat = document.getElementById('chat');
+  chat.innerHTML = session.messages.map((m) => {
+    let h = '';
+    if (m.material) {
+      h += `<div class="material">${/^image\//.test(m.material.mimeType) ? `<img src="${m.material.url}" alt="${esc(m.material.name)}">` : ''}<a href="${m.material.url}" target="_blank" rel="noopener">📄 ${esc(m.material.name)}</a></div>`;
+    }
+    return h + `<div class="msg ${m.role === 'ai' ? 'ai' : 'user'}">${esc(m.text)}</div>`;
+  }).join('') + (typing ? '<div class="typing"><span>●</span> <span>●</span> <span>●</span></div>' : '');
+  const qn = session.messages.filter((m) => m.role === 'ai').length;
+  document.getElementById('prog').textContent = session.status === 'active' ? `${t('q')} ${qn}` : '';
+  const quick = document.getElementById('quick');
+  if (quick) {
+    quick.innerHTML = typing ? '' : (session.quickReplies || []).map((q) => `<button>${esc(q)}</button>`).join('');
+    quick.querySelectorAll('button').forEach((b) => b.onclick = () => { document.getElementById('input').value = b.textContent; answer(); });
+  }
+  if (session.status !== 'active' && document.getElementById('composer')) {
+    document.getElementById('composer').outerHTML = `<div class="done">${t('thanks')}</div><div class="rating" id="rating"></div>`;
+    renderRating();
+  }
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}
+
+async function answer(finish = false) {
+  if (busy) return;
+  const input = document.getElementById('input');
+  const text = input.value.trim();
+  if (!text && !finish) return;
+  busy = true; stopMic();
+  document.getElementById('send').disabled = true;
+  if (text) session.messages.push({ role: 'user', text });
+  input.value = ''; input.style.height = 'auto';
+  drawMessages(true);
+  try {
+    session = await api(`/api/public/sessions/${session.id}/${finish ? 'finish' : 'answer'}`, { method: 'POST', body: JSON.stringify({ text }) });
+  } catch (e) {
+    if (text) { session.messages.pop(); input.value = text; }
+    alert(t('err') + '\n' + e.message);
+  }
+  busy = false;
+  const s = document.getElementById('send'); if (s) s.disabled = false;
+  drawMessages();
+  document.getElementById('input')?.focus();
+}
+
+function renderRating() {
+  const el = document.getElementById('rating');
+  if (!el) return;
+  if (session.rated) { el.innerHTML = `<p class="small">${t('rateThanks')}</p>`; localStorage.removeItem(store); return; }
+  let score = 0;
+  el.innerHTML = `<div><b>${t('rateQ')}</b></div><div class="stars">${[1, 2, 3, 4, 5].map((n) => `<button data-n="${n}" aria-label="${n}">★</button>`).join('')}</div>
+    <textarea id="rc" rows="2" placeholder="${t('rateC')}"></textarea><button class="btn primary big" id="rs" disabled>${t('rateSend')}</button>`;
+  el.querySelectorAll('.stars button').forEach((b) => b.onclick = () => { score = +b.dataset.n; el.querySelectorAll('.stars button').forEach((x) => x.classList.toggle('on', +x.dataset.n <= score)); el.querySelector('#rs').disabled = false; });
+  el.querySelector('#rs').onclick = async () => {
+    try { session = await api(`/api/public/sessions/${session.id}/rating`, { method: 'POST', body: JSON.stringify({ score, comment: el.querySelector('#rc').value }) }); } catch { session.rated = true; }
+    renderRating();
+  };
+}
+
+let rec = null;
+function setupMic(input) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const btn = document.getElementById('mic');
+  if (!SR) return;
+  btn.hidden = false;
+  btn.onclick = () => {
+    if (rec) return stopMic();
+    rec = new SR(); rec.lang = SPEECH_LANG[lang] || lang; rec.interimResults = true; rec.continuous = true;
+    const base = input.value ? input.value + ' ' : '';
+    rec.onresult = (e) => { input.value = base + Array.from(e.results).map((r) => r[0].transcript).join(''); input.dispatchEvent(new Event('input')); };
+    rec.onend = () => { rec = null; btn.classList.remove('rec'); };
+    rec.start(); btn.classList.add('rec');
+  };
+}
+function stopMic() { if (rec) { rec.stop(); rec = null; } document.getElementById('mic')?.classList.remove('rec'); }
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# Render Blueprint: リポジトリを Render につなぐと、この設定でWebサービスと保存用ディスクが作られます
+services:
+  - type: web
+    name: ai-interview
+    runtime: node
+    plan: starter            # 保存用ディスクを使うには有料プラン(Starter)が必要です
+    region: singapore
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/languages
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false          # デプロイ時に Render の画面で入力
+      - key: ADMIN_PASSWORD
+        sync: false          # デプロイ時に Render の画面で入力
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: DAILY_AI_CALL_LIMIT
+        value: "3000"
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: interview-data
+      mountPath: /var/data
+      sizeGB: 1
