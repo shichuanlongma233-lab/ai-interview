@@ -101,7 +101,7 @@ function renderLogin(msg = '') {
     try { const r = await api('/api/admin/login', { method: 'POST', body: JSON.stringify({ password: $('#pw').value }) }); token = r.token; sessionStorage.setItem('adminToken', token); boot(); }
     catch (e) { renderLogin(e.message); }
   };
-  $('#login').onclick = go; $('#pw').onkeydown = (e) => e.key === 'Enter' && go();
+  $('#login').onclick = go; $('#pw').onkeydown = (e) => { if (e.key === 'Enter') go(); };
 }
 
 async function boot() {
@@ -352,7 +352,7 @@ async function renderStats(el, s) {
       <div>${mark(h.text)}</div>${h.ja ? `<div class="hint">${mark(h.ja)}</div>` : ''}<a href="#" data-s="${h.sessionId}" data-i="${h.index}" class="small">会話の前後を見る</a></div>`).join('');
     el.querySelectorAll('[data-s]').forEach((a) => a.onclick = (e) => { e.preventDefault(); showSession(s, a.dataset.s, $('#detail', el), +a.dataset.i); });
   };
-  $('#go', el).onclick = search; $('#q', el).onkeydown = (e) => e.key === 'Enter' && !e.isComposing && search();
+  $('#go', el).onclick = search; $('#q', el).onkeydown = (e) => { if (e.key === 'Enter' && !e.isComposing) search(); };
 }
 
 // ---------- 全体分析・書き出し ----------
