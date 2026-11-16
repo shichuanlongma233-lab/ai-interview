@@ -20,9 +20,15 @@
     --round: "Zen Maru Gothic", system-ui, -apple-system, "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
   }
   body { background: var(--washi); color: var(--sumi); font-family: var(--round); }
+<<<<<<< Updated upstream
   /* 画面全体に固定したグラデーション(スクロールしても常に表示) */
   body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
     background: linear-gradient(180deg, var(--sakura) 0%, #fdf1ef 45%, var(--washi) 100%); }
+=======
+  /* グラデーションは画面に固定し、スクロールしても常に表示する(iOSでも効くよう fixed の疑似要素で描く) */
+  body::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background: linear-gradient(180deg, var(--sakura) 0%, #fdf1ef 38%, var(--washi) 75%); }
+>>>>>>> Stashed changes
   .wrap { max-width: 560px; margin: 0 auto; min-height: 100dvh; display: flex; flex-direction: column; position: relative; }
   /* 青海波の模様 */
   .seigaiha { position: fixed; inset: 0 0 auto 0; height: 300px; z-index: -1; pointer-events: none; opacity: .35;
